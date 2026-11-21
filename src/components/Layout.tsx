@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { tokenStorage } from '../lib/storage';
 
-function Layout(props: { liens: { to: string; label: string }[]; children: ReactNode }) {
+function Layout(props: { liens: { to: string; label: string }[]; large?: boolean; children: ReactNode }) {
     // Rechargement complet : vide le cache et relit la session.
     const seDeconnecter = () => {
         tokenStorage.remove();
@@ -13,7 +13,7 @@ function Layout(props: { liens: { to: string; label: string }[]; children: React
     return (
         <Box sx={{ minHeight: '100vh' }}>
             <AppBar position="sticky" sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Container maxWidth="md">
+                <Container maxWidth={props.large ? 'lg' : 'md'}>
                     <Toolbar disableGutters sx={{ gap: 1, flexWrap: 'wrap', py: 1 }}>
                         <Typography sx={{ fontWeight: 600, mr: 2 }}>CPES · Programme culturel</Typography>
                         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', flexGrow: 1 }}>
@@ -39,7 +39,7 @@ function Layout(props: { liens: { to: string; label: string }[]; children: React
                     </Toolbar>
                 </Container>
             </AppBar>
-            <Container maxWidth="md" sx={{ py: 4 }}>
+            <Container maxWidth={props.large ? 'lg' : 'md'} sx={{ py: 4 }}>
                 {props.children}
             </Container>
         </Box>

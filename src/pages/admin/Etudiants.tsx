@@ -2,6 +2,7 @@ import {
     Alert,
     Box,
     Button,
+    Chip,
     Dialog,
     DialogActions,
     DialogContent,
@@ -10,26 +11,34 @@ import {
     Paper,
     Stack,
     Switch,
+    Tab,
     Table,
     TableBody,
     TableCell,
     TableContainer,
     TableHead,
     TableRow,
+    Tabs,
     TextField,
+    Tooltip,
     Typography,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { useQuery } from '@tanstack/react-query';
 import { ChangeEvent, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
 import { api } from '../../lib/api';
 import { useAction } from '../../lib/useAction';
-import type { apercuImportType, etudiantAdminType, etudiantDtoType } from '../../types';
+import type {
+    apercuImportType,
+    etudiantAdminType,
+    etudiantDtoType,
+    statutRecapitulatifType,
+} from '../../types';
 import { FormulaireEtudiant } from './formulaires';
 
 type filtreBooleenType = '' | 'oui' | 'non';
@@ -45,7 +54,15 @@ function Etudiants() {
     const etudiants = useQuery({ queryKey: ['admin', 'etudiants'], queryFn: api.getEtudiants });
     const parcours = useQuery({ queryKey: ['admin', 'parcours'], queryFn: api.getParcours });
     const [recherche, setRecherche] = useState('');
-    const [parcoursId, setParcoursId] = useState('');
+    // Vue courante dans l'URL (?parcours=<id>), absente pour la vue « Tous ».
+    const [searchParams, setSearchParams] = useSearchParams();
+    const parcoursId = searchParams.get('parcours') ?? '';
+    const recapitulatif = useQuery({
+        queryKey: ['admin', 'recapitulatif', parcoursId],
+        queryFn: () => api.getRecapitulatifParcours(parcoursId),
+        enabled: !!parcoursId,
+    });
+    const colonnesEvenements = parcoursId ? (recapitulatif.data?.evenements ?? []) : [];
     const [cotisation, setCotisation] = useState<filtreBooleenType>('');
     const [boursier, setBoursier] = useState<filtreBooleenType>('');
     const [creation, setCreation] = useState(false);
@@ -88,22 +105,28 @@ function Etudiants() {
                 </Stack>
             </Box>
 
+            <Tabs
+                value={parcoursId}
+                onChange={(_e, valeur: string) => setSearchParams(valeur ? { parcours: valeur } : {})}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{ borderBottom: 1, borderColor: 'divider' }}
+            >
+                <Tab value="" label="Tous" />
+                {(parcours.data ?? []).map((p) => (
+                    <Tab key={p.id} value={p.id} label={p.nom} />
+                ))}
+            </Tabs>
+
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                 <TextField label="Rechercher" value={recherche} onChange={(e) => setRecherche(e.target.value)} sx={{ flexGrow: 1 }} />
-                <TextField select label="Parcours" value={parcoursId} onChange={(e) => setParcoursId(e.target.value)} sx={{ minWidth: 150 }}>
-                    <MenuItem value="">Tous</MenuItem>
-                    {(parcours.data ?? []).map((p) => (
-                        <MenuItem key={p.id} value={p.id}>
-                            {p.nom}
-                        </MenuItem>
-                    ))}
-                </TextField>
                 <FiltreBooleen label="Cotisation payée" valeur={cotisation} onChange={setCotisation} />
                 <FiltreBooleen label="Boursier" valeur={boursier} onChange={setBoursier} />
             </Stack>
 
             {etudiants.isPending && <Chargement />}
             {etudiants.isError && <Erreur error={etudiants.error} />}
+            {recapitulatif.isError && <Erreur error={recapitulatif.error} />}
             {etudiants.data && (
                 <>
                     <Typography variant="body2" color="text.secondary">
@@ -114,10 +137,17 @@ function Etudiants() {
                             <TableHead>
                                 <TableRow>
                                     <TableCell>Étudiant</TableCell>
-                                    <TableCell>Parcours</TableCell>
+                                    {!parcoursId && <TableCell>Parcours</TableCell>}
                                     <TableCell>Boursier</TableCell>
                                     <TableCell>Cotisation</TableCell>
-                                    <TableCell>Présences</TableCell>
+                                    {!parcoursId && <TableCell>Présences</TableCell>}
+                                    {colonnesEvenements.map((evenement) => (
+                                        <TableCell key={evenement.id} sx={{ whiteSpace: 'nowrap' }}>
+                                            <Tooltip title={evenement.nom}>
+                                                <Link to={`/admin/evenements/${evenement.id}`}>{evenement.slug}</Link>
+                                            </Tooltip>
+                                        </TableCell>
+                                    ))}
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -131,7 +161,7 @@ function Etudiants() {
                                                 {e.email}
                                             </Typography>
                                         </TableCell>
-                                        <TableCell>{e.parcoursNom}</TableCell>
+                                        {!parcoursId && <TableCell>{e.parcoursNom}</TableCell>}
                                         <TableCell>
                                             <OuiNon valeur={e.boursier} label="Boursier" />
                                         </TableCell>
@@ -157,13 +187,23 @@ function Etudiants() {
                                                 }}
                                             />
                                         </TableCell>
-                                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                                            <Compteurs
-                                                present={e.nbPresent}
-                                                avecJustif={e.nbAbsentAvecJustificatif}
-                                                sansJustif={e.nbAbsentSansJustificatif}
-                                            />
-                                        </TableCell>
+                                        {!parcoursId && (
+                                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                                <Compteurs
+                                                    present={e.nbPresent}
+                                                    avecJustif={e.nbAbsentAvecJustificatif}
+                                                    sansJustif={e.nbAbsentSansJustificatif}
+                                                />
+                                            </TableCell>
+                                        )}
+                                        {colonnesEvenements.map((evenement) => {
+                                            const statut = recapitulatif.data?.cellules[e.id]?.[evenement.id];
+                                            return (
+                                                <TableCell key={evenement.id}>
+                                                    {statut && <StatutRecapitulatif statut={statut} />}
+                                                </TableCell>
+                                            );
+                                        })}
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -228,6 +268,29 @@ function FiltreBooleen(props: {
             <MenuItem value="oui">Oui</MenuItem>
             <MenuItem value="non">Non</MenuItem>
         </TextField>
+    );
+}
+
+const STATUTS_RECAPITULATIF: Record<
+    statutRecapitulatifType,
+    { label: string; titre: string; couleur?: { bg: string; fg: string } }
+> = {
+    non_inscrit: { label: 'Non-inscrit', titre: 'Inscrit à aucune sortie', couleur: { bg: '#F97316', fg: '#fff' } },
+    non_pointe: { label: 'Non-pointé', titre: 'Inscrit, présence pas encore pointée' },
+    abj: { label: 'ABJ', titre: 'Absent avec justificatif', couleur: { bg: '#FACC15', fg: '#111' } },
+    abi: { label: 'ABI', titre: 'Absent sans justificatif', couleur: { bg: '#DC2626', fg: '#fff' } },
+    ok: { label: 'OK', titre: 'Présent', couleur: { bg: '#16A34A', fg: '#fff' } },
+};
+
+function StatutRecapitulatif({ statut }: { statut: statutRecapitulatifType }) {
+    const { label, titre, couleur } = STATUTS_RECAPITULATIF[statut];
+    return (
+        <Chip
+            label={label}
+            title={titre}
+            variant={couleur ? 'filled' : 'outlined'}
+            sx={couleur ? { bgcolor: couleur.bg, color: couleur.fg, fontWeight: 600 } : undefined}
+        />
     );
 }
 

@@ -13,6 +13,7 @@ import type {
     inscriptionEtudiantType,
     meType,
     parcoursType,
+    recapitulatifParcoursType,
     sortieAPointerType,
     sortieDetailType,
     sortieType,
@@ -77,6 +78,8 @@ const api = {
     createParcours: (nom: string) => call<parcoursType>('admin/parcours', 'POST', { nom }),
     renameParcours: (id: string, nom: string) => call(`admin/parcours/${id}`, 'PATCH', { nom }),
     deleteParcours: (id: string) => call(`admin/parcours/${id}`, 'DELETE'),
+    getRecapitulatifParcours: (id: string) =>
+        call<recapitulatifParcoursType>(`admin/parcours/${id}/recapitulatif`),
 
     // Admin : étudiants
     getEtudiants: () => call<etudiantAdminType[]>('admin/etudiants'),

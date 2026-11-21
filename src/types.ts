@@ -88,6 +88,7 @@ type evenementType = {
 type etatEvenementType = 'brouillon' | 'ouvert' | 'passe';
 
 type evenementAdminType = evenementType & {
+    slug: string;
     bonus: boolean;
     parcoursNom: string | null;
     etat: etatEvenementType;
@@ -105,6 +106,7 @@ type sortieType = {
 };
 
 type evenementDetailType = evenementType & {
+    slug: string;
     bonus: boolean;
     parcoursNom: string | null;
     etat: etatEvenementType;
@@ -143,6 +145,13 @@ type sortieAPointerType = {
 
 type ligneImportType = etudiantDtoType & { ligne: number; parcoursNom: string };
 
+type statutRecapitulatifType = 'non_inscrit' | 'non_pointe' | 'abj' | 'abi' | 'ok';
+
+type recapitulatifParcoursType = {
+    evenements: { id: string; nom: string; slug: string; premierDebut: string | null }[];
+    cellules: Record<string, Record<string, statutRecapitulatifType>>;
+};
+
 type apercuImportType = {
     aCreer: ligneImportType[];
     aMettreAJour: ligneImportType[];
@@ -169,4 +178,6 @@ export type {
     sortieDetailType,
     sortieAPointerType,
     apercuImportType,
+    statutRecapitulatifType,
+    recapitulatifParcoursType,
 };

@@ -44,7 +44,7 @@ function Router() {
 
     if (me.data.role === 'admin') {
         return (
-            <Layout liens={LIENS_ADMIN}>
+            <Layout liens={LIENS_ADMIN} large>
                 <Routes>
                     <Route path="/admin" element={<AccueilAdmin />} />
                     <Route path="/admin/evenements" element={<Evenements />} />
