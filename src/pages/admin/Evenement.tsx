@@ -89,7 +89,9 @@ function Evenement() {
                     {e.ouvertAutresParcoursLe && <Chip label="Ouvert aux autres parcours" />}
                 </Stack>
                 <Typography variant="h1">{e.nom}</Typography>
-                <Typography color="text.secondary">{e.institution}</Typography>
+                {(e.institution || e.lieu) && (
+                    <Typography color="text.secondary">{[e.institution, e.lieu].filter(Boolean).join(' · ')}</Typography>
+                )}
                 {e.description && <Typography sx={{ mt: 1, whiteSpace: 'pre-line' }}>{e.description}</Typography>}
                 {e.dateOuverture && (
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -182,7 +184,6 @@ function Evenement() {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Date</TableCell>
-                                <TableCell>Lieu</TableCell>
                                 <TableCell>Inscrits</TableCell>
                                 <TableCell align="right" />
                             </TableRow>
@@ -193,7 +194,6 @@ function Evenement() {
                                     <TableCell>
                                         <Link to={`/admin/sorties/${sortie.id}`}>{formatDateHeure(sortie.debut)}</Link>
                                     </TableCell>
-                                    <TableCell>{sortie.lieu ?? '—'}</TableCell>
                                     <TableCell>
                                         {sortie.nbInscrits} / {sortie.places}
                                         {sortie.nbNonPointes > 0 && new Date(sortie.debut) < new Date() && (
@@ -234,6 +234,7 @@ function Evenement() {
                         nom: e.nom,
                         institution: e.institution,
                         description: e.description,
+                        lieu: e.lieu,
                         parcoursId: e.parcoursId,
                     }}
                     parcoursVerrouille={e.dateOuverture !== null}

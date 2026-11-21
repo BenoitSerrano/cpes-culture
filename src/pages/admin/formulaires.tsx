@@ -57,7 +57,8 @@ function useParcoursOptions() {
 
 function useInstitutions() {
     const evenements = useQuery({ queryKey: ['admin', 'evenements'], queryFn: api.getEvenements });
-    return Array.from(new Set((evenements.data ?? []).map((e) => e.institution))).sort((a, b) =>
+    const institutions = (evenements.data ?? []).map((e) => e.institution).filter((i): i is string => !!i);
+    return Array.from(new Set(institutions)).sort((a, b) =>
         a.localeCompare(b, 'fr'),
     );
 }
@@ -73,7 +74,7 @@ function FormulaireEvenement(props: {
     const parcours = useParcoursOptions();
     const institutions = useInstitutions();
     const [dto, setDto] = useState<evenementDtoType>(
-        props.initial ?? { nom: '', institution: '', description: '', parcoursId: null },
+        props.initial ?? { nom: '', institution: '', description: '', lieu: '', parcoursId: null },
     );
 
     return (
@@ -82,7 +83,14 @@ function FormulaireEvenement(props: {
             titre={props.titre}
             enCours={props.enCours}
             onFermer={props.onFermer}
-            onValider={() => props.onValider({ ...dto, description: dto.description || null })}
+            onValider={() =>
+                props.onValider({
+                    ...dto,
+                    institution: dto.institution?.trim() || null,
+                    description: dto.description || null,
+                    lieu: dto.lieu?.trim() || null,
+                })
+            }
         >
             <TextField
                 label="Nom"
@@ -94,9 +102,15 @@ function FormulaireEvenement(props: {
             <Autocomplete
                 freeSolo
                 options={institutions}
-                inputValue={dto.institution}
+                inputValue={dto.institution ?? ''}
                 onInputChange={(_e, institution) => setDto({ ...dto, institution })}
-                renderInput={(params) => <TextField {...params} label="Institution" required />}
+                renderInput={(params) => <TextField {...params} label="Institution (facultatif)" />}
+            />
+            <TextField
+                label="Lieu (facultatif)"
+                helperText="Commun à toutes les sorties de l'évènement."
+                value={dto.lieu ?? ''}
+                onChange={(e) => setDto({ ...dto, lieu: e.target.value })}
             />
             <TextField
                 label="Parcours"
@@ -138,7 +152,6 @@ function FormulaireSortie(props: {
 }) {
     const [debut, setDebut] = useState(props.initial ? isoVersSaisie(props.initial.debut) : '');
     const [places, setPlaces] = useState(String(props.initial?.places ?? ''));
-    const [lieu, setLieu] = useState(props.initial?.lieu ?? '');
     const placesMin = Math.max(1, props.placesMin ?? 1);
 
     return (
@@ -148,7 +161,7 @@ function FormulaireSortie(props: {
             enCours={props.enCours}
             onFermer={props.onFermer}
             onValider={() =>
-                props.onValider({ debut: saisieVersIso(debut), places: Number(places), lieu: lieu || null })
+                props.onValider({ debut: saisieVersIso(debut), places: Number(places) })
             }
         >
             <TextField
@@ -168,7 +181,6 @@ function FormulaireSortie(props: {
                 slotProps={{ htmlInput: { min: placesMin, step: 1 } }}
                 helperText={placesMin > 1 ? `Au moins ${placesMin} (nombre d'inscrits).` : undefined}
             />
-            <TextField label="Lieu" value={lieu} onChange={(e) => setLieu(e.target.value)} />
         </FormulaireDialog>
     );
 }

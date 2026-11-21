@@ -52,11 +52,12 @@ async function call<dataT>(uri: string, method: methodType = 'GET', body?: objec
 
 type evenementDtoType = {
     nom: string;
-    institution: string;
+    institution: string | null;
     description: string | null;
+    lieu: string | null;
     parcoursId: string | null;
 };
-type sortieDtoType = { debut: string; places: number; lieu: string | null };
+type sortieDtoType = { debut: string; places: number };
 
 const api = {
     // Authentification

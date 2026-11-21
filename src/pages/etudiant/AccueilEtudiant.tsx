@@ -71,7 +71,7 @@ function AccueilEtudiant({ me }: { me: etudiantMeType }) {
                             <strong>{aConfirmer.evenement.nom}</strong>
                             <br />
                             {formatDateHeure(aConfirmer.sortie.debut)}
-                            {aConfirmer.sortie.lieu && ` · ${aConfirmer.sortie.lieu}`}
+                            {aConfirmer.evenement.lieu && ` · ${aConfirmer.evenement.lieu}`}
                         </Typography>
                         <Alert severity="warning">
                             Êtes-vous sûr ? Vous ne pourrez pas vous désinscrire vous-même, et une absence
@@ -102,7 +102,11 @@ function CarteEvenement(props: {
                         {evenement.horsParcours && <Chip label="Ouvert aux autres parcours" />}
                     </Stack>
                     <Typography variant="h2">{evenement.nom}</Typography>
-                    <Typography color="text.secondary">{evenement.institution}</Typography>
+                    {(evenement.institution || evenement.lieu) && (
+                        <Typography color="text.secondary">
+                            {[evenement.institution, evenement.lieu].filter(Boolean).join(' · ')}
+                        </Typography>
+                    )}
                     {evenement.description && (
                         <Typography sx={{ mt: 1, whiteSpace: 'pre-line' }}>{evenement.description}</Typography>
                     )}
@@ -135,9 +139,7 @@ function LigneSortie(props: { sortie: sortieEtudiantType; onInscrire: () => void
                     {formatDateHeure(sortie.debut)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    {[sortie.lieu, `${sortie.placesRestantes} place(s) restante(s) sur ${sortie.places}`]
-                        .filter(Boolean)
-                        .join(' · ')}
+                    {`${sortie.placesRestantes} place(s) restante(s) sur ${sortie.places}`}
                 </Typography>
             </Box>
             {sortie.inscrit ? (

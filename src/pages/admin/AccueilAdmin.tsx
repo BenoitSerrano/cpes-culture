@@ -29,7 +29,7 @@ function AccueilAdmin() {
                                 <Box>
                                     <Typography fontWeight={500}>{sortie.evenementNom}</Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        {[sortie.institution, formatDateHeure(sortie.debut)].join(' · ')}
+                                        {[sortie.institution, sortie.lieu, formatDateHeure(sortie.debut)].filter(Boolean).join(' · ')}
                                     </Typography>
                                     <Typography variant="body2" color="warning.main">
                                         {sortie.nbNonPointes} inscrit(s) non pointé(s)

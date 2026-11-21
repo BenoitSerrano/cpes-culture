@@ -90,7 +90,7 @@ function Etudiant() {
                                     <Link to={`/admin/sorties/${inscription.sortieId}`}>{inscription.evenementNom}</Link>
                                     {inscription.bonus && <Chip label="Bonus" variant="outlined" sx={{ ml: 1 }} />}
                                     <Typography variant="body2" color="text.secondary">
-                                        {inscription.institution} · {formatDateHeure(inscription.debut)}
+                                        {[inscription.institution, formatDateHeure(inscription.debut)].filter(Boolean).join(' · ')}
                                     </Typography>
                                 </Box>
                                 <StatutChip statut={inscription.statut} />

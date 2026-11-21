@@ -88,7 +88,7 @@ function Evenements() {
                                             <TableCell>
                                                 <Typography fontWeight={500}>{evenement.nom}</Typography>
                                                 <Typography variant="body2" color="text.secondary">
-                                                    {evenement.institution}
+                                                    {[evenement.institution, evenement.lieu].filter(Boolean).join(' · ')}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>

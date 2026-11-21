@@ -31,7 +31,6 @@ type meType =
 type sortieEtudiantType = {
     id: string;
     debut: string;
-    lieu: string | null;
     places: number;
     placesRestantes: number;
     inscrit: boolean;
@@ -42,8 +41,9 @@ type sortieEtudiantType = {
 type evenementEtudiantType = {
     id: string;
     nom: string;
-    institution: string;
+    institution: string | null;
     description: string | null;
+    lieu: string | null;
     bonus: boolean;
     parcoursNom: string | null;
     horsParcours: boolean;
@@ -55,7 +55,7 @@ type inscriptionEtudiantType = {
     debut: string;
     lieu: string | null;
     evenementNom: string;
-    institution: string;
+    institution: string | null;
     bonus: boolean;
     statut: statutPresenceType | null;
 };
@@ -78,8 +78,9 @@ type ficheEtudiantType = etudiantAdminType & {
 type evenementType = {
     id: string;
     nom: string;
-    institution: string;
+    institution: string | null;
     description: string | null;
+    lieu: string | null;
     parcoursId: string | null;
     dateOuverture: string | null;
     ouvertAutresParcoursLe: string | null;
@@ -102,7 +103,6 @@ type sortieType = {
     evenementId: string;
     debut: string;
     places: number;
-    lieu: string | null;
 };
 
 type evenementDetailType = evenementType & {
@@ -139,7 +139,7 @@ type sortieAPointerType = {
     lieu: string | null;
     evenementId: string;
     evenementNom: string;
-    institution: string;
+    institution: string | null;
     nbNonPointes: number;
 };
 

@@ -84,7 +84,7 @@ function Sortie() {
                     {formatDateHeure(s.debut)}
                 </Typography>
                 <Typography color="text.secondary">
-                    {[s.evenement.institution, s.lieu, `${s.inscrits.length} / ${s.places} inscrits`]
+                    {[s.evenement.institution, s.evenement.lieu, `${s.inscrits.length} / ${s.places} inscrits`]
                         .filter(Boolean)
                         .join(' · ')}
                 </Typography>
