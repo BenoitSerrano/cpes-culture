@@ -25,7 +25,6 @@ const LIENS_ADMIN = [
     { to: '/admin', label: 'Accueil' },
     { to: '/admin/evenements', label: 'Évènements' },
     { to: '/admin/etudiants', label: 'Étudiants' },
-    { to: '/admin/parcours', label: 'Parcours' },
 ];
 
 function Router() {

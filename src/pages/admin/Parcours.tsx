@@ -3,6 +3,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useQuery } from '@tanstack/react-query';
 import { FormEvent, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Chargement } from '../../components/Chargement';
 import { Erreur } from '../../components/Erreur';
 import { api } from '../../lib/api';
@@ -35,7 +36,12 @@ function Parcours() {
 
     return (
         <Stack spacing={3}>
-            <Typography variant="h1">Parcours</Typography>
+            <Box>
+                <Button component={Link} to="/admin/etudiants" color="inherit" sx={{ color: 'text.secondary', mb: 1, ml: -1 }}>
+                    ← Étudiants
+                </Button>
+                <Typography variant="h1">Parcours</Typography>
+            </Box>
             <Stack direction="row" spacing={1} component="form" onSubmit={ajouter}>
                 <TextField label="Nouveau parcours" value={nom} onChange={(e) => setNom(e.target.value)} sx={{ flexGrow: 1 }} />
                 <Button type="submit" variant="contained" disabled={!nom.trim() || creer.isPending}>

@@ -19,14 +19,17 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 import { useQuery } from '@tanstack/react-query';
 import { ChangeEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Chargement } from '../../components/Chargement';
+import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
 import { api } from '../../lib/api';
 import { useAction } from '../../lib/useAction';
-import type { apercuImportType, etudiantDtoType } from '../../types';
+import type { apercuImportType, etudiantAdminType, etudiantDtoType } from '../../types';
 import { FormulaireEtudiant } from './formulaires';
 
 type filtreBooleenType = '' | 'oui' | 'non';
@@ -47,13 +50,15 @@ function Etudiants() {
     const [boursier, setBoursier] = useState<filtreBooleenType>('');
     const [creation, setCreation] = useState(false);
     const [importOuvert, setImportOuvert] = useState(false);
+    const [cotisationAChanger, setCotisationAChanger] = useState<etudiantAdminType>();
 
     const creer = useAction((dto: etudiantDtoType) => api.createEtudiant(dto), {
         succes: 'Étudiant ajouté.',
         onSuccess: () => setCreation(false),
     });
-    const basculerCotisation = useAction(({ id, valeur }: { id: string; valeur: boolean }) =>
-        api.updateEtudiant(id, { cotisationPayee: valeur }),
+    const basculerCotisation = useAction(
+        ({ id, valeur }: { id: string; valeur: boolean }) => api.updateEtudiant(id, { cotisationPayee: valeur }),
+        { succes: 'Cotisation mise à jour.', onSuccess: () => setCotisationAChanger(undefined) },
     );
 
     const filtres = useMemo(() => {
@@ -72,7 +77,18 @@ function Etudiants() {
     return (
         <Stack spacing={3}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                <Typography variant="h1">Étudiants</Typography>
+                <Box>
+                    <Typography variant="h1">Étudiants</Typography>
+                    <Button
+                        component={Link}
+                        to="/admin/parcours"
+                        size="small"
+                        color="inherit"
+                        sx={{ color: 'text.secondary', ml: -0.75 }}
+                    >
+                        Gérer les parcours
+                    </Button>
+                </Box>
                 <Stack direction="row" spacing={1}>
                     <Button variant="outlined" onClick={() => setImportOuvert(true)}>
                         Importer un CSV
@@ -127,15 +143,29 @@ function Etudiants() {
                                             </Typography>
                                         </TableCell>
                                         <TableCell>{e.parcoursNom}</TableCell>
-                                        <TableCell>{e.boursier ? 'Oui' : 'Non'}</TableCell>
+                                        <TableCell>
+                                            <OuiNon valeur={e.boursier} label="Boursier" />
+                                        </TableCell>
                                         <TableCell>
                                             <Switch
                                                 checked={e.cotisationPayee}
+                                                color="success"
                                                 disabled={basculerCotisation.isPending}
-                                                onChange={(event) =>
-                                                    basculerCotisation.mutate({ id: e.id, valeur: event.target.checked })
-                                                }
-                                                slotProps={{ input: { 'aria-label': 'Cotisation payée' } }}
+                                                onChange={() => setCotisationAChanger(e)}
+                                                sx={{
+                                                    '& .MuiSwitch-switchBase:not(.Mui-checked) .MuiSwitch-thumb': {
+                                                        color: 'error.main',
+                                                    },
+                                                    '& .MuiSwitch-switchBase:not(.Mui-checked) + .MuiSwitch-track': {
+                                                        backgroundColor: 'error.main',
+                                                        opacity: 0.4,
+                                                    },
+                                                }}
+                                                slotProps={{
+                                                    input: {
+                                                        'aria-label': e.cotisationPayee ? 'Cotisation payée' : 'Cotisation non payée',
+                                                    },
+                                                }}
                                             />
                                         </TableCell>
                                         <TableCell sx={{ whiteSpace: 'nowrap' }}>
@@ -162,6 +192,32 @@ function Etudiants() {
                 />
             )}
             {importOuvert && <ImportCsv onFermer={() => setImportOuvert(false)} />}
+            <Confirmation
+                ouvert={!!cotisationAChanger}
+                titre={
+                    cotisationAChanger?.cotisationPayee
+                        ? 'Marquer la cotisation comme non payée ?'
+                        : 'Marquer la cotisation comme payée ?'
+                }
+                libelle="Confirmer"
+                danger={cotisationAChanger?.cotisationPayee}
+                enCours={basculerCotisation.isPending}
+                onAnnuler={() => setCotisationAChanger(undefined)}
+                onConfirmer={() =>
+                    cotisationAChanger &&
+                    basculerCotisation.mutate({
+                        id: cotisationAChanger.id,
+                        valeur: !cotisationAChanger.cotisationPayee,
+                    })
+                }
+            >
+                <Typography>
+                    {cotisationAChanger?.prenom} {cotisationAChanger?.nom}{' '}
+                    {cotisationAChanger?.cotisationPayee
+                        ? 'ne pourra plus s’inscrire aux sorties, et une alerte s’affichera sur son accueil.'
+                        : 'pourra s’inscrire aux sorties.'}
+                </Typography>
+            </Confirmation>
         </Stack>
     );
 }
@@ -183,6 +239,14 @@ function FiltreBooleen(props: {
             <MenuItem value="oui">Oui</MenuItem>
             <MenuItem value="non">Non</MenuItem>
         </TextField>
+    );
+}
+
+function OuiNon({ valeur, label }: { valeur: boolean; label: string }) {
+    return valeur ? (
+        <CheckIcon color="success" fontSize="small" titleAccess={`${label} : oui`} />
+    ) : (
+        <CloseIcon color="error" fontSize="small" titleAccess={`${label} : non`} />
     );
 }
 
