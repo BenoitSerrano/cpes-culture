@@ -1,4 +1,5 @@
 import {
+    Alert,
     Autocomplete,
     Button,
     Dialog,
@@ -264,6 +265,12 @@ function FormulaireEtudiant(props: {
                 }
                 label="Cotisation payée"
             />
+            {props.initial?.cotisationPayee && !dto.cotisationPayee && (
+                <Alert severity="warning">
+                    La cotisation repassera à « non payée » : l'étudiant ne pourra plus s'inscrire aux
+                    sorties et verra une alerte sur son accueil.
+                </Alert>
+            )}
         </FormulaireDialog>
     );
 }

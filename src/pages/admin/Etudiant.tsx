@@ -7,6 +7,7 @@ import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
 import { StatutChip } from '../../components/StatutChip';
 import { api } from '../../lib/api';
+import { tokenStorage } from '../../lib/storage';
 import { formatDateHeure } from '../../lib/format';
 import { useAction } from '../../lib/useAction';
 import type { etudiantDtoType } from '../../types';
@@ -26,6 +27,12 @@ function Etudiant() {
     const modifier = useAction((dto: etudiantDtoType) => api.updateEtudiant(etudiantId, dto), {
         succes: 'Étudiant modifié.',
         onSuccess: () => setEdition(false),
+    });
+    const voirCommeEtudiant = useAction(() => api.impersonifier(etudiantId), {
+        onSuccess: ({ token }) => {
+            tokenStorage.demarrerImpersonation(token, etudiantId);
+            window.location.assign('/');
+        },
     });
     const supprimer = useAction(() => api.deleteEtudiant(etudiantId), {
         succes: 'Étudiant supprimé.',
@@ -60,6 +67,13 @@ function Etudiant() {
             <Stack direction="row" spacing={1}>
                 <Button variant="outlined" onClick={() => setEdition(true)}>
                     Modifier
+                </Button>
+                <Button
+                    variant="outlined"
+                    disabled={voirCommeEtudiant.isPending}
+                    onClick={() => voirCommeEtudiant.mutate(undefined)}
+                >
+                    Voir comme cet étudiant
                 </Button>
                 <Button color="error" onClick={() => setSuppression(true)}>
                     Supprimer

@@ -10,7 +10,6 @@ import {
     MenuItem,
     Paper,
     Stack,
-    Switch,
     Tab,
     Table,
     TableBody,
@@ -166,26 +165,24 @@ function Etudiants() {
                                             <OuiNon valeur={e.boursier} label="Boursier" />
                                         </TableCell>
                                         <TableCell>
-                                            <Switch
-                                                checked={e.cotisationPayee}
-                                                color="success"
-                                                disabled={basculerCotisation.isPending}
-                                                onChange={() => setCotisationAChanger(e)}
-                                                sx={{
-                                                    '& .MuiSwitch-switchBase:not(.Mui-checked) .MuiSwitch-thumb': {
-                                                        color: 'error.main',
-                                                    },
-                                                    '& .MuiSwitch-switchBase:not(.Mui-checked) + .MuiSwitch-track': {
-                                                        backgroundColor: 'error.main',
-                                                        opacity: 0.4,
-                                                    },
-                                                }}
-                                                slotProps={{
-                                                    input: {
-                                                        'aria-label': e.cotisationPayee ? 'Cotisation payée' : 'Cotisation non payée',
-                                                    },
-                                                }}
-                                            />
+                                            {/* Action à sens unique : le retour à « non payée » se fait
+                                                depuis la fiche de l'étudiant. */}
+                                            <Stack direction="row" spacing={1} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
+                                                <OuiNon valeur={e.cotisationPayee} label="Cotisation payée" />
+                                                <Typography variant="body2">
+                                                    {e.cotisationPayee ? 'Payée' : 'Non payée'}
+                                                </Typography>
+                                                {!e.cotisationPayee && (
+                                                    <Button
+                                                        size="small"
+                                                        variant="outlined"
+                                                        disabled={basculerCotisation.isPending}
+                                                        onClick={() => setCotisationAChanger(e)}
+                                                    >
+                                                        Marquer payée
+                                                    </Button>
+                                                )}
+                                            </Stack>
                                         </TableCell>
                                         {!parcoursId && (
                                             <TableCell sx={{ whiteSpace: 'nowrap' }}>
@@ -223,28 +220,16 @@ function Etudiants() {
             {importOuvert && <ImportCsv onFermer={() => setImportOuvert(false)} />}
             <Confirmation
                 ouvert={!!cotisationAChanger}
-                titre={
-                    cotisationAChanger?.cotisationPayee
-                        ? 'Marquer la cotisation comme non payée ?'
-                        : 'Marquer la cotisation comme payée ?'
-                }
+                titre="Marquer la cotisation comme payée ?"
                 libelle="Confirmer"
-                danger={cotisationAChanger?.cotisationPayee}
                 enCours={basculerCotisation.isPending}
                 onAnnuler={() => setCotisationAChanger(undefined)}
                 onConfirmer={() =>
-                    cotisationAChanger &&
-                    basculerCotisation.mutate({
-                        id: cotisationAChanger.id,
-                        valeur: !cotisationAChanger.cotisationPayee,
-                    })
+                    cotisationAChanger && basculerCotisation.mutate({ id: cotisationAChanger.id, valeur: true })
                 }
             >
                 <Typography>
-                    {cotisationAChanger?.prenom} {cotisationAChanger?.nom}{' '}
-                    {cotisationAChanger?.cotisationPayee
-                        ? 'ne pourra plus s’inscrire aux sorties, et une alerte s’affichera sur son accueil.'
-                        : 'pourra s’inscrire aux sorties.'}
+                    {cotisationAChanger?.prenom} {cotisationAChanger?.nom} pourra s’inscrire aux sorties.
                 </Typography>
             </Confirmation>
         </Stack>

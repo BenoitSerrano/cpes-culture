@@ -5,6 +5,7 @@ import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
 import { api } from '../../lib/api';
+import { tokenStorage } from '../../lib/storage';
 import { formatDateHeure } from '../../lib/format';
 import { useAction } from '../../lib/useAction';
 import type { evenementEtudiantType, meType, sortieEtudiantType } from '../../types';
@@ -84,6 +85,9 @@ function AccueilEtudiant({ me }: { me: etudiantMeType }) {
     );
 }
 
+// Le prof qui voit l'application comme un étudiant ne peut pas agir à sa place.
+const LECTURE_SEULE = tokenStorage.estEnImpersonation();
+
 function CarteEvenement(props: {
     evenement: evenementEtudiantType;
     onInscrire: (sortie: sortieEtudiantType) => void;
@@ -146,9 +150,14 @@ function LigneSortie(props: { sortie: sortieEtudiantType; onInscrire: () => void
                 <Chip label="Inscrit" color="success" />
             ) : (
                 <Box sx={{ textAlign: { sm: 'right' }, maxWidth: { sm: 260 } }}>
-                    <Button variant="contained" disabled={!!sortie.raison} onClick={props.onInscrire}>
+                    <Button variant="contained" disabled={!!sortie.raison || LECTURE_SEULE} onClick={props.onInscrire}>
                         S'inscrire
                     </Button>
+                    {LECTURE_SEULE && !sortie.raison && (
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                            Inscription possible pour l'étudiant (lecture seule).
+                        </Typography>
+                    )}
                     {sortie.raisonMessage && (
                         <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
                             {sortie.raisonMessage}

@@ -60,7 +60,14 @@ function Router() {
     }
 
     return (
-        <Layout liens={LIENS_ETUDIANT}>
+        <Layout
+            liens={LIENS_ETUDIANT}
+            impersonation={
+                tokenStorage.estEnImpersonation()
+                    ? `${me.data.etudiant.prenom} ${me.data.etudiant.nom}`
+                    : undefined
+            }
+        >
             <Routes>
                 <Route path="/" element={<AccueilEtudiant me={me.data} />} />
                 <Route path="/inscriptions" element={<MesInscriptions />} />

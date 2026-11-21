@@ -39,9 +39,15 @@ async function call<dataT>(uri: string, method: methodType = 'GET', body?: objec
     });
 
     if (response.status === 401 && token) {
-        // Session expirée ou compte supprimé : retour à la connexion.
-        tokenStorage.remove();
-        window.location.assign('/connexion');
+        if (tokenStorage.estEnImpersonation()) {
+            // Vue étudiant expirée (ou étudiant supprimé) : retour à la vue admin.
+            tokenStorage.arreterImpersonation();
+            window.location.assign('/admin/etudiants');
+        } else {
+            // Session expirée ou compte supprimé : retour à la connexion.
+            tokenStorage.remove();
+            window.location.assign('/connexion');
+        }
     }
     if (!response.ok) {
         const message = (await response.text().catch(() => '')) || response.statusText;
@@ -89,6 +95,7 @@ const api = {
     updateEtudiant: (id: string, dto: Partial<etudiantDtoType>) =>
         call<etudiantType>(`admin/etudiants/${id}`, 'PATCH', dto),
     deleteEtudiant: (id: string) => call(`admin/etudiants/${id}`, 'DELETE'),
+    impersonifier: (id: string) => call<{ token: string }>(`admin/etudiants/${id}/impersonation`, 'POST'),
     apercuImport: (csv: string) => call<apercuImportType>('admin/etudiants/import/apercu', 'POST', { csv }),
     importer: (csv: string) =>
         call<{ nbCrees: number; nbMisAJour: number }>('admin/etudiants/import', 'POST', { csv }),
