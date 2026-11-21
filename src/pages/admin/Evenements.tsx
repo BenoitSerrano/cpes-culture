@@ -38,7 +38,18 @@ function Evenements() {
     return (
         <Stack spacing={3}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                <Typography variant="h1">Évènements</Typography>
+                <Box>
+                    <Typography variant="h1">Évènements</Typography>
+                    <Button
+                        component={Link}
+                        to="/admin/parcours"
+                        size="small"
+                        color="inherit"
+                        sx={{ color: 'text.secondary', ml: -0.75 }}
+                    >
+                        Gérer les parcours
+                    </Button>
+                </Box>
                 <Button variant="contained" onClick={() => setCreation(true)}>
                     Nouvel évènement
                 </Button>

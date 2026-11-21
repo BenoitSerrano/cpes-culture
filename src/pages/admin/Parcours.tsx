@@ -37,8 +37,8 @@ function Parcours() {
     return (
         <Stack spacing={3}>
             <Box>
-                <Button component={Link} to="/admin/etudiants" color="inherit" sx={{ color: 'text.secondary', mb: 1, ml: -1 }}>
-                    ← Étudiants
+                <Button component={Link} to="/admin/evenements" color="inherit" sx={{ color: 'text.secondary', mb: 1, ml: -1 }}>
+                    ← Évènements
                 </Button>
                 <Typography variant="h1">Parcours</Typography>
             </Box>

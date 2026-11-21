@@ -77,18 +77,7 @@ function Etudiants() {
     return (
         <Stack spacing={3}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                <Box>
-                    <Typography variant="h1">Étudiants</Typography>
-                    <Button
-                        component={Link}
-                        to="/admin/parcours"
-                        size="small"
-                        color="inherit"
-                        sx={{ color: 'text.secondary', ml: -0.75 }}
-                    >
-                        Gérer les parcours
-                    </Button>
-                </Box>
+                <Typography variant="h1">Étudiants</Typography>
                 <Stack direction="row" spacing={1}>
                     <Button variant="outlined" onClick={() => setImportOuvert(true)}>
                         Importer un CSV
