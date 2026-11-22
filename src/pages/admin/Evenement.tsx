@@ -21,7 +21,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { BadgeParcours } from "../../components/BadgeParcours";
+import { BadgeBonus, BadgeParcours } from "../../components/BadgeParcours";
 import { Chargement } from "../../components/Chargement";
 import { Confirmation } from "../../components/Confirmation";
 import { Erreur } from "../../components/Erreur";
@@ -129,7 +129,7 @@ function Evenement() {
             color={e.etat === "ouvert" ? "success" : "default"}
           />
           {e.bonus ? (
-            <Chip label="Bonus" variant="outlined" />
+            <BadgeBonus />
           ) : (
             <BadgeParcours
               nom={e.parcoursNom}

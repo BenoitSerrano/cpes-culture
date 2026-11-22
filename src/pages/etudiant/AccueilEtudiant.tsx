@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { BadgeParcours } from "../../components/BadgeParcours";
+import { BadgeBonus, BadgeParcours } from "../../components/BadgeParcours";
 import { Chargement } from "../../components/Chargement";
 import { Confirmation } from "../../components/Confirmation";
 import { Erreur } from "../../components/Erreur";
@@ -140,7 +140,7 @@ function CarteEvenement(props: {
             useFlexGap
           >
             {evenement.bonus ? (
-              <Chip label="Bonus" variant="outlined" />
+              <BadgeBonus />
             ) : (
               <BadgeParcours
                 nom={evenement.parcoursNom}

@@ -102,7 +102,8 @@ function Etudiants() {
         parcours: (e) => e.parcoursNom,
         statut: (e) => e.boursier,
         cotisation: (e) => e.cotisationPayee,
-        presences: (e) => e.nbPresent,
+        // Tri par nombre de problèmes (non-inscriptions + absences injustifiées).
+        presences: (e) => e.nbNonInscrit + e.nbAbsentSansJustificatif,
     };
     for (const evenement of colonnesEvenements) {
         colonnesTri[`evenement:${evenement.id}`] = (e) => {
@@ -192,7 +193,7 @@ function Etudiants() {
                                     {!parcoursId && tri.enTete('parcours', 'Parcours')}
                                     {tri.enTete('statut', 'Statut')}
                                     {tri.enTete('cotisation', 'Cotisation')}
-                                    {!parcoursId && tri.enTete('presences', 'Présences')}
+                                    {!parcoursId && tri.enTete('presences', 'Récapitulatif')}
                                     {colonnesEvenements.map((evenement) =>
                                         tri.enTete(
                                             `evenement:${evenement.id}`,
@@ -247,8 +248,9 @@ function Etudiants() {
                                             <TableCell sx={{ whiteSpace: 'nowrap' }}>
                                                 <Compteurs
                                                     present={e.nbPresent}
-                                                    avecJustif={e.nbAbsentAvecJustificatif}
-                                                    sansJustif={e.nbAbsentSansJustificatif}
+                                                    nonInscrit={e.nbNonInscrit}
+                                                    abj={e.nbAbsentAvecJustificatif}
+                                                    abi={e.nbAbsentSansJustificatif}
                                                 />
                                             </TableCell>
                                         )}
@@ -318,6 +320,13 @@ function FiltreBooleen(props: {
     );
 }
 
+const COULEURS_RECAPITULATIF = {
+    ok: { bg: '#16A34A', fg: '#fff' },
+    ni: { bg: '#DC2626', fg: '#fff' },
+    abj: { bg: '#FACC15', fg: '#111' },
+    abi: { bg: '#DC2626', fg: '#fff' },
+};
+
 // Ordre de tri : du plus problématique au plus satisfaisant.
 const ORDRE_STATUTS_RECAPITULATIF: statutRecapitulatifType[] = ['non_inscrit', 'abi', 'non_pointe', 'abj', 'ok'];
 
@@ -325,7 +334,7 @@ const STATUTS_RECAPITULATIF: Record<
     statutRecapitulatifType,
     { label: string; titre: string; couleur?: { bg: string; fg: string } }
 > = {
-    non_inscrit: { label: 'Non-inscrit', titre: 'Inscrit à aucune sortie', couleur: { bg: '#F97316', fg: '#fff' } },
+    non_inscrit: { label: 'NI', titre: 'Non inscrit : inscrit à aucune sortie', couleur: COULEURS_RECAPITULATIF.ni },
     non_pointe: { label: 'Non-pointé', titre: 'Inscrit, présence pas encore pointée' },
     abj: { label: 'ABJ', titre: 'Absent avec justificatif', couleur: { bg: '#FACC15', fg: '#111' } },
     abi: { label: 'ABI', titre: 'Absent sans justificatif', couleur: { bg: '#DC2626', fg: '#fff' } },
@@ -352,20 +361,37 @@ function OuiNon({ valeur, label }: { valeur: boolean; label: string }) {
     );
 }
 
-function Compteurs(props: { present: number; avecJustif: number; sansJustif: number }) {
-    return (
-        <Typography variant="body2" component="span">
-            <span title="Présent">✓ {props.present}</span>
-            {' · '}
-            <span title="Absent avec justificatif">{props.avecJustif} justifiée(s)</span>
-            {' · '}
+// Récapitulatif d'un étudiant : présences (coche verte), NI, ABJ, ABI. Mêmes codes et couleurs
+// que les cases du récapitulatif par parcours ; les compteurs à zéro sont atténués.
+function Compteurs(props: { present: number; nonInscrit: number; abj: number; abi: number }) {
+    const pastille = (label: string, titre: string, valeur: number, couleur: { bg: string; fg: string }) => (
+        <Box
+            component="span"
+            title={titre}
+            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, opacity: valeur > 0 ? 1 : 0.35 }}
+        >
             <Box
                 component="span"
-                title="Absent sans justificatif"
-                sx={{ color: props.sansJustif > 0 ? 'error.main' : undefined }}
+                sx={{ bgcolor: couleur.bg, color: couleur.fg, fontWeight: 600, fontSize: 11, px: 0.75, borderRadius: 1 }}
             >
-                {props.sansJustif} sans justificatif
+                {label}
             </Box>
+            {valeur}
+        </Box>
+    );
+    return (
+        <Typography variant="body2" component="span" sx={{ display: 'inline-flex', gap: 1.5, alignItems: 'center' }}>
+            <Box
+                component="span"
+                title="Présences pointées"
+                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, opacity: props.present > 0 ? 1 : 0.35 }}
+            >
+                <CheckIcon fontSize="small" sx={{ color: COULEURS_RECAPITULATIF.ok.bg }} />
+                {props.present}
+            </Box>
+            {pastille('NI', 'Non inscrit', props.nonInscrit, COULEURS_RECAPITULATIF.ni)}
+            {pastille('ABJ', 'Absence justifiée', props.abj, COULEURS_RECAPITULATIF.abj)}
+            {pastille('ABI', 'Absence injustifiée', props.abi, COULEURS_RECAPITULATIF.abi)}
         </Typography>
     );
 }

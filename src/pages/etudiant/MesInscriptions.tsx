@@ -1,4 +1,5 @@
-import { Box, Chip, Divider, Paper, Stack, Typography } from '@mui/material';
+import { BadgeBonus } from '../../components/BadgeParcours';
+import { Box, Divider, Paper, Stack, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Chargement } from '../../components/Chargement';
 import { Erreur } from '../../components/Erreur';
@@ -49,7 +50,7 @@ function Section(props: {
                                 <Box>
                                     <Typography fontWeight={500}>
                                         {ligne.evenementNom}{' '}
-                                        {ligne.bonus && <Chip label="Bonus" variant="outlined" sx={{ ml: 0.5 }} />}
+                                        {ligne.bonus && <BadgeBonus sx={{ ml: 0.5 }} />}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
                                         <Infos>

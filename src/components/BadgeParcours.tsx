@@ -1,4 +1,4 @@
-import { Chip } from '@mui/material';
+import { Chip, SxProps, Theme } from '@mui/material';
 
 // Texte noir ou blanc selon la luminance de la couleur, pour rester lisible.
 function couleurTexte(hex: string) {
@@ -22,4 +22,19 @@ function BadgeParcours(props: { nom: string | null; couleur: string | null; pref
     );
 }
 
-export { BadgeParcours };
+const COULEUR_BONUS = '#C9DAF8';
+
+// Évènement sans parcours : badge « Bonus », même rendu qu'un badge de parcours.
+function BadgeBonus({ sx }: { sx?: SxProps<Theme> }) {
+    return (
+        <Chip
+            label="Bonus"
+            sx={[
+                { bgcolor: COULEUR_BONUS, color: couleurTexte(COULEUR_BONUS), fontWeight: 500 },
+                ...(Array.isArray(sx) ? sx : [sx]),
+            ]}
+        />
+    );
+}
+
+export { BadgeParcours, BadgeBonus };

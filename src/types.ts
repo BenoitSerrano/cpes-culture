@@ -72,6 +72,7 @@ type compteursType = {
     nbPresent: number;
     nbAbsentSansJustificatif: number;
     nbAbsentAvecJustificatif: number;
+    nbNonInscrit: number;
 };
 
 type etudiantAdminType = etudiantType & compteursType & { parcoursNom: string; parcoursCouleur: string | null };

@@ -1,6 +1,6 @@
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import HelpIcon from '@mui/icons-material/Help';
+import DescriptionIcon from '@mui/icons-material/Description';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { Box } from '@mui/material';
 import { labelStatut } from '../lib/labels';
@@ -9,7 +9,8 @@ import type { statutPresenceType } from '../types';
 // Mêmes couleurs que le récapitulatif par parcours (OK vert, ABJ jaune, ABI rouge).
 const ICONES = {
     present: { Icone: CheckCircleIcon, couleur: '#16A34A' },
-    absent_avec_justificatif: { Icone: HelpIcon, couleur: '#CA8A04' },
+    // Document : l'absence est couverte par un justificatif.
+    absent_avec_justificatif: { Icone: DescriptionIcon, couleur: '#CA8A04' },
     absent_sans_justificatif: { Icone: CancelIcon, couleur: '#DC2626' },
     aucun: { Icone: RadioButtonUncheckedIcon, couleur: '#9CA3AF' },
 } as const;

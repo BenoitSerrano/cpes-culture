@@ -15,7 +15,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BadgeParcours } from "../../components/BadgeParcours";
+import { BadgeBonus, BadgeParcours } from "../../components/BadgeParcours";
 import { Chargement } from "../../components/Chargement";
 import { Erreur } from "../../components/Erreur";
 import { Lieu } from "../../components/Lieu";
@@ -135,7 +135,7 @@ function TableauEvenements({ liste }: { liste: evenementAdminType[] }) {
               </TableCell>
               <TableCell>
                 {evenement.bonus ? (
-                  <Chip label="Bonus" variant="outlined" />
+                  <BadgeBonus />
                 ) : (
                   <Stack
                     direction="row"

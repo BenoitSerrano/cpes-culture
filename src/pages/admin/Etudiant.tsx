@@ -2,7 +2,7 @@ import { Box, Button, Chip, Divider, Paper, Stack, Typography } from '@mui/mater
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { BadgeParcours } from '../../components/BadgeParcours';
+import { BadgeBonus, BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
@@ -88,8 +88,9 @@ function Etudiant() {
                 </Typography>
                 <Compteurs
                     present={e.nbPresent}
-                    avecJustif={e.nbAbsentAvecJustificatif}
-                    sansJustif={e.nbAbsentSansJustificatif}
+                    nonInscrit={e.nbNonInscrit}
+                    abj={e.nbAbsentAvecJustificatif}
+                    abi={e.nbAbsentSansJustificatif}
                 />
             </Box>
             {e.inscriptions.length === 0 ? (
@@ -104,7 +105,7 @@ function Etudiant() {
                             >
                                 <Box>
                                     <Link to={`/admin/sorties/${inscription.sortieId}`}>{inscription.evenementNom}</Link>
-                                    {inscription.bonus && <Chip label="Bonus" variant="outlined" sx={{ ml: 1 }} />}
+                                    {inscription.bonus && <BadgeBonus sx={{ ml: 1 }} />}
                                     <Typography variant="body2" color="text.secondary">
                                         {[inscription.institution, formatDateHeure(inscription.debut)].filter(Boolean).join(' · ')}
                                     </Typography>
