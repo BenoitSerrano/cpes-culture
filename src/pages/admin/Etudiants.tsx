@@ -306,7 +306,10 @@ function FiltreBooleen(props: {
             label={props.label}
             value={props.valeur}
             onChange={(e) => props.onChange(e.target.value as filtreBooleenType)}
-            sx={{ minWidth: 150 }}
+            // « Tous » vaut '' : sans ça, MUI masque la valeur et laisse le libellé dans le champ,
+            // où il passe sous la flèche.
+            slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}
+            sx={{ minWidth: 180 }}
         >
             <MenuItem value="">Tous</MenuItem>
             <MenuItem value="oui">Oui</MenuItem>
