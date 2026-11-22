@@ -102,11 +102,9 @@ function Evenement() {
   // Étudiants du parcours pas encore inscrits, rappelés dans la confirmation d'ouverture.
   const manquantsAOuvrir =
     ouverture === "autres" ? (progression?.manquants ?? []) : [];
+  // Possible même pour un évènement passé (inscriptions a posteriori par le prof).
   const peutOuvrirAutres =
-    !e.bonus &&
-    e.dateOuverture !== null &&
-    e.ouvertAutresParcoursLe === null &&
-    e.etat !== "passe";
+    !e.bonus && e.dateOuverture !== null && e.ouvertAutresParcoursLe === null;
 
   return (
     <Stack spacing={3}>
@@ -197,8 +195,8 @@ function Evenement() {
                 Ouverture aux autres parcours
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Possible quand tous les étudiants du parcours {e.parcoursNom} à
-                jour de cotisation sont inscrits à une sortie.
+                Recommandé une fois que tous les étudiants du parcours{" "}
+                {e.parcoursNom} à jour de cotisation sont inscrits à une sortie.
               </Typography>
               <Box>
                 <Typography variant="body2" sx={{ mb: 0.5 }}>
