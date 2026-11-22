@@ -7,6 +7,9 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    IconButton,
+    ListItemIcon,
+    Menu,
     MenuItem,
     Paper,
     Stack,
@@ -22,7 +25,10 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
+import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import { useQuery } from '@tanstack/react-query';
 import { ChangeEvent, useMemo, useState } from 'react';
@@ -67,6 +73,7 @@ function Etudiants() {
     const [cotisation, setCotisation] = useState<filtreBooleenType>('');
     const [creation, setCreation] = useState(false);
     const [importOuvert, setImportOuvert] = useState(false);
+    const [menuAjout, setMenuAjout] = useState<HTMLElement | null>(null);
     const [cotisationAChanger, setCotisationAChanger] = useState<etudiantAdminType>();
 
     const creer = useAction((dto: etudiantDtoType) => api.createEtudiant(dto), {
@@ -109,14 +116,46 @@ function Etudiants() {
         <Stack spacing={3}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                 <Typography variant="h1">Étudiants</Typography>
-                <Stack direction="row" spacing={1}>
-                    <Button variant="outlined" onClick={() => setImportOuvert(true)}>
+                <Tooltip title="Ajouter des étudiants">
+                    <IconButton
+                        aria-label="Ajouter des étudiants"
+                        aria-haspopup="menu"
+                        onClick={(event) => setMenuAjout(event.currentTarget)}
+                        sx={{ border: 1, borderColor: 'divider' }}
+                    >
+                        <AddIcon />
+                    </IconButton>
+                </Tooltip>
+                <Menu
+                    anchorEl={menuAjout}
+                    open={!!menuAjout}
+                    onClose={() => setMenuAjout(null)}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                    <MenuItem
+                        onClick={() => {
+                            setMenuAjout(null);
+                            setCreation(true);
+                        }}
+                    >
+                        <ListItemIcon>
+                            <PersonAddOutlinedIcon fontSize="small" />
+                        </ListItemIcon>
+                        Ajouter un étudiant
+                    </MenuItem>
+                    <MenuItem
+                        onClick={() => {
+                            setMenuAjout(null);
+                            setImportOuvert(true);
+                        }}
+                    >
+                        <ListItemIcon>
+                            <UploadFileOutlinedIcon fontSize="small" />
+                        </ListItemIcon>
                         Importer un CSV
-                    </Button>
-                    <Button variant="contained" onClick={() => setCreation(true)}>
-                        Ajouter
-                    </Button>
-                </Stack>
+                    </MenuItem>
+                </Menu>
             </Box>
 
             <Tabs
