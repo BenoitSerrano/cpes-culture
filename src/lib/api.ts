@@ -132,10 +132,12 @@ const api = {
   deleteEvenement: (id: string) => call(`admin/evenements/${id}`, "DELETE"),
   ouvrir: (id: string) =>
     call<evenementType>(`admin/evenements/${id}/ouverture`, "POST"),
-  ouvrirAutresParcours: (id: string) =>
+  // forcer : ouvrir même si des étudiants du parcours ne sont pas encore inscrits.
+  ouvrirAutresParcours: (id: string, forcer = false) =>
     call<evenementType>(
       `admin/evenements/${id}/ouverture-autres-parcours`,
       "POST",
+      { forcer },
     ),
 
   // Admin : sorties

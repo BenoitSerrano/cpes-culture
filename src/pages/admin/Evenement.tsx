@@ -67,7 +67,10 @@ function Evenement() {
     (cible: "parcours" | "autres") =>
       cible === "parcours"
         ? api.ouvrir(evenementId)
-        : api.ouvrirAutresParcours(evenementId),
+        : api.ouvrirAutresParcours(
+            evenementId,
+            !!evenement.data?.progressionParcours?.manquants.length,
+          ),
     { succes: "Évènement ouvert.", onSuccess: () => setOuverture(undefined) },
   );
   const enregistrerSortie = useAction(
@@ -96,6 +99,9 @@ function Evenement() {
   if (evenement.isError) return <Erreur error={evenement.error} />;
   const e = evenement.data;
   const progression = e.progressionParcours;
+  // Étudiants du parcours pas encore inscrits, rappelés dans la confirmation d'ouverture.
+  const manquantsAOuvrir =
+    ouverture === "autres" ? (progression?.manquants ?? []) : [];
   const peutOuvrirAutres =
     !e.bonus &&
     e.dateOuverture !== null &&
@@ -224,7 +230,6 @@ function Evenement() {
                 <Box>
                   <Button
                     variant="contained"
-                    disabled={progression.manquants.length > 0}
                     onClick={() => setOuverture("autres")}
                   >
                     Ouvrir aux autres parcours
@@ -363,11 +368,28 @@ function Evenement() {
             ? "Ouvrir aux autres parcours ?"
             : "Ouvrir les inscriptions ?"
         }
-        libelle="Ouvrir"
+        libelle={manquantsAOuvrir.length > 0 ? "Ouvrir quand même" : "Ouvrir"}
+        danger={manquantsAOuvrir.length > 0}
         enCours={ouvrir.isPending}
         onAnnuler={() => setOuverture(undefined)}
         onConfirmer={() => ouverture && ouvrir.mutate(ouverture)}
       >
+        {manquantsAOuvrir.length > 0 && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {manquantsAOuvrir.length === 1
+              ? "1 étudiant du parcours à jour de cotisation n'est pas encore inscrit :"
+              : `${manquantsAOuvrir.length} étudiants du parcours à jour de cotisation ne sont pas encore inscrits :`}
+            <Box component="ul" sx={{ my: 1, pl: 2.5 }}>
+              {manquantsAOuvrir.map((m) => (
+                <li key={m.id}>
+                  {m.prenom} {m.nom}
+                </li>
+              ))}
+            </Box>
+            En ouvrant maintenant, ils risquent de ne plus trouver de place.
+            Êtes-vous sûr de vouloir ouvrir quand même ?
+          </Alert>
+        )}
         <Typography>
           {ouverture === "autres"
             ? "Les étudiants des autres parcours pourront s’inscrire aux places restantes."
