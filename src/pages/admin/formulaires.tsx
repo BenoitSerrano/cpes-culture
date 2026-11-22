@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FormEvent, ReactNode, useState } from 'react';
 import { api, evenementDtoType, sortieDtoType } from '../../lib/api';
 import { isoVersSaisie, saisieVersIso } from '../../lib/format';
+import { estLienGoogleMaps } from '../../lib/lieu';
 import type { etudiantDtoType } from '../../types';
 
 function FormulaireDialog(props: {
@@ -77,12 +78,13 @@ function FormulaireEvenement(props: {
     const [dto, setDto] = useState<evenementDtoType>(
         props.initial ?? { nom: '', institution: '', description: '', lieu: '', parcoursId: null },
     );
+    const lieuInvalide = !!dto.lieu?.trim() && !estLienGoogleMaps(dto.lieu);
 
     return (
         <FormulaireDialog
             ouvert
             titre={props.titre}
-            enCours={props.enCours}
+            enCours={props.enCours || lieuInvalide}
             onFermer={props.onFermer}
             onValider={() =>
                 props.onValider({
@@ -108,9 +110,16 @@ function FormulaireEvenement(props: {
                 renderInput={(params) => <TextField {...params} label="Institution (facultatif)" />}
             />
             <TextField
-                label="Lieu (facultatif)"
-                helperText="Commun à toutes les sorties de l'évènement."
+                label="Lien Google Maps du lieu (facultatif)"
+                type="url"
+                placeholder="https://maps.app.goo.gl/…"
                 value={dto.lieu ?? ''}
+                error={lieuInvalide}
+                helperText={
+                    lieuInvalide
+                        ? 'Collez un lien Google Maps (bouton « Partager » dans Google Maps).'
+                        : "Commun à toutes les sorties de l'évènement."
+                }
                 onChange={(e) => setDto({ ...dto, lieu: e.target.value })}
             />
             <TextField

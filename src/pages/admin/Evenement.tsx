@@ -25,6 +25,7 @@ import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
+import { Infos, Lieu } from '../../components/Lieu';
 import { api, evenementDtoType, sortieDtoType } from '../../lib/api';
 import { formatDateCourte, formatDateHeure } from '../../lib/format';
 import { ETATS } from '../../lib/labels';
@@ -95,7 +96,9 @@ function Evenement() {
                 </Stack>
                 <Typography variant="h1">{e.nom}</Typography>
                 {(e.institution || e.lieu) && (
-                    <Typography color="text.secondary">{[e.institution, e.lieu].filter(Boolean).join(' · ')}</Typography>
+                    <Typography color="text.secondary">
+                        <Infos>{[e.institution, e.lieu && <Lieu url={e.lieu} />]}</Infos>
+                    </Typography>
                 )}
                 {e.description && <Typography sx={{ mt: 1, whiteSpace: 'pre-line' }}>{e.description}</Typography>}
                 {e.dateOuverture && (

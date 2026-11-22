@@ -18,6 +18,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Erreur } from '../../components/Erreur';
+import { Lieu } from '../../components/Lieu';
 import { api, evenementDtoType } from '../../lib/api';
 import { formatDateCourte } from '../../lib/format';
 import { ETATS } from '../../lib/labels';
@@ -89,7 +90,7 @@ function Evenements() {
                                             <TableCell>
                                                 <Typography fontWeight={500}>{evenement.nom}</Typography>
                                                 <Typography variant="body2" color="text.secondary">
-                                                    {[evenement.institution, evenement.lieu].filter(Boolean).join(' · ')}
+                                                    {evenement.institution} <Lieu url={evenement.lieu} compact />
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>

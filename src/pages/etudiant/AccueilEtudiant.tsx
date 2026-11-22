@@ -5,6 +5,7 @@ import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
+import { Infos, Lieu } from '../../components/Lieu';
 import { api } from '../../lib/api';
 import { tokenStorage } from '../../lib/storage';
 import { formatDateHeure } from '../../lib/format';
@@ -75,7 +76,12 @@ function AccueilEtudiant({ me }: { me: etudiantMeType }) {
                             <strong>{aConfirmer.evenement.nom}</strong>
                             <br />
                             {formatDateHeure(aConfirmer.sortie.debut)}
-                            {aConfirmer.evenement.lieu && ` · ${aConfirmer.evenement.lieu}`}
+                            {aConfirmer.evenement.lieu && (
+                                <>
+                                    {' · '}
+                                    <Lieu url={aConfirmer.evenement.lieu} />
+                                </>
+                            )}
                         </Typography>
                         <Alert severity="warning">
                             Êtes-vous sûr ? Vous ne pourrez pas vous désinscrire vous-même, et une absence
@@ -111,7 +117,7 @@ function CarteEvenement(props: {
                     <Typography variant="h2">{evenement.nom}</Typography>
                     {(evenement.institution || evenement.lieu) && (
                         <Typography color="text.secondary">
-                            {[evenement.institution, evenement.lieu].filter(Boolean).join(' · ')}
+                            <Infos>{[evenement.institution, evenement.lieu && <Lieu url={evenement.lieu} />]}</Infos>
                         </Typography>
                     )}
                     {evenement.description && (

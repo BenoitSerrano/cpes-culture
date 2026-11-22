@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Chargement } from '../../components/Chargement';
 import { Erreur } from '../../components/Erreur';
+import { Infos, Lieu } from '../../components/Lieu';
 import { api } from '../../lib/api';
 import { formatDateHeure } from '../../lib/format';
 
@@ -29,7 +30,13 @@ function AccueilAdmin() {
                                 <Box>
                                     <Typography fontWeight={500}>{sortie.evenementNom}</Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        {[sortie.institution, sortie.lieu, formatDateHeure(sortie.debut)].filter(Boolean).join(' · ')}
+                                        <Infos>
+                                            {[
+                                                sortie.institution,
+                                                sortie.lieu && <Lieu url={sortie.lieu} />,
+                                                formatDateHeure(sortie.debut),
+                                            ]}
+                                        </Infos>
                                     </Typography>
                                     <Typography variant="body2" color="warning.main">
                                         {sortie.nbNonPointes} inscrit(s) non pointé(s)

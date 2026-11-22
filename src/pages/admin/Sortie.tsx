@@ -23,6 +23,7 @@ import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
+import { Infos, Lieu } from '../../components/Lieu';
 import { api } from '../../lib/api';
 import { getErrorMessage } from '../../lib/errors';
 import { formatDateHeure } from '../../lib/format';
@@ -85,9 +86,13 @@ function Sortie() {
                     {formatDateHeure(s.debut)}
                 </Typography>
                 <Typography color="text.secondary">
-                    {[s.evenement.institution, s.evenement.lieu, `${s.inscrits.length} / ${s.places} inscrits`]
-                        .filter(Boolean)
-                        .join(' · ')}
+                    <Infos>
+                        {[
+                            s.evenement.institution,
+                            s.evenement.lieu && <Lieu url={s.evenement.lieu} />,
+                            `${s.inscrits.length} / ${s.places} inscrits`,
+                        ]}
+                    </Infos>
                 </Typography>
             </Box>
 

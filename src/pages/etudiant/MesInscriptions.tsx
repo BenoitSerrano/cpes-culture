@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Chargement } from '../../components/Chargement';
 import { Erreur } from '../../components/Erreur';
 import { StatutChip } from '../../components/StatutChip';
+import { Infos, Lieu } from '../../components/Lieu';
 import { api } from '../../lib/api';
 import { formatDateHeure } from '../../lib/format';
 import type { inscriptionEtudiantType } from '../../types';
@@ -51,9 +52,13 @@ function Section(props: {
                                         {ligne.bonus && <Chip label="Bonus" variant="outlined" sx={{ ml: 0.5 }} />}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        {[ligne.institution, formatDateHeure(ligne.debut), ligne.lieu]
-                                            .filter(Boolean)
-                                            .join(' · ')}
+                                        <Infos>
+                                            {[
+                                                ligne.institution,
+                                                formatDateHeure(ligne.debut),
+                                                ligne.lieu && <Lieu url={ligne.lieu} />,
+                                            ]}
+                                        </Infos>
                                     </Typography>
                                 </Box>
                                 {props.avecStatut && <StatutChip statut={ligne.statut} />}
