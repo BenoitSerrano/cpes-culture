@@ -39,7 +39,7 @@ function AccueilAdmin() {
                                         </Infos>
                                     </Typography>
                                     <Typography variant="body2" color="warning.main">
-                                        {sortie.nbNonPointes} inscrit(s) non pointé(s)
+                                        {sortie.nbNonPointes} inscrit(s) pas encore pointé(s)
                                     </Typography>
                                 </Box>
                                 <Button variant="outlined" component={Link} to={`/admin/sorties/${sortie.id}`}>

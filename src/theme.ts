@@ -33,6 +33,17 @@ const theme = createTheme({
         MuiSelect: { defaultProps: { size: 'small' } },
         MuiChip: { defaultProps: { size: 'small' } },
         MuiTableCell: { styleOverrides: { head: { fontWeight: 600, color: '#6b6b6b' } } },
+        // Tous les tableaux : lignes bien séparées (bandes alternées, bordures marquées, ligne
+        // survolée mise en évidence) pour ne pas se tromper de ligne.
+        MuiTableBody: {
+            styleOverrides: {
+                root: {
+                    '& .MuiTableRow-root:nth-of-type(even)': { backgroundColor: '#f4f4f5' },
+                    '& .MuiTableRow-root:hover': { backgroundColor: '#e8eefc' },
+                    '& .MuiTableCell-root': { borderBottom: '1px solid #d4d4d8', paddingTop: 10, paddingBottom: 10 },
+                },
+            },
+        },
     },
 });
 

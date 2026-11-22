@@ -21,6 +21,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
+import { StatutAvecIcone } from '../../components/IconeStatut';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
 import { Infos, Lieu } from '../../components/Lieu';
@@ -71,7 +72,7 @@ function Sortie() {
         {
             etudiant: (i) => `${i.nom} ${i.prenom}`,
             parcours: (i) => i.parcoursNom,
-            // Non pointés d'abord, puis absences, puis présents.
+            // Pas encore pointés d'abord, puis absences, puis présents.
             presence: (i) => [null, 'absent_sans_justificatif', 'absent_avec_justificatif', 'present'].indexOf(i.statut),
         },
         { cle: 'etudiant' },
@@ -202,6 +203,17 @@ function Sortie() {
                                             fullWidth
                                             disabled={!s.pointable || pointer.isPending}
                                             value={inscrit.statut ?? ''}
+                                            // Sans displayEmpty, « Pas encore pointé » ('') ne s'affiche pas.
+                                            slotProps={{
+                                                select: {
+                                                    displayEmpty: true,
+                                                    renderValue: (valeur) => (
+                                                        <StatutAvecIcone
+                                                            statut={(valeur || null) as statutPresenceType | null}
+                                                        />
+                                                    ),
+                                                },
+                                            }}
                                             onChange={(e) =>
                                                 pointer.mutate({
                                                     etudiantId: inscrit.id,
@@ -209,10 +221,12 @@ function Sortie() {
                                                 })
                                             }
                                         >
-                                            <MenuItem value="">Non pointé</MenuItem>
+                                            <MenuItem value="">
+                                                <StatutAvecIcone statut={null} />
+                                            </MenuItem>
                                             {STATUTS.map((statut) => (
                                                 <MenuItem key={statut.value} value={statut.value}>
-                                                    {statut.label}
+                                                    <StatutAvecIcone statut={statut.value} />
                                                 </MenuItem>
                                             ))}
                                         </TextField>

@@ -7,7 +7,7 @@ const STATUTS: { value: statutPresenceType; label: string }[] = [
 ];
 
 function labelStatut(statut: statutPresenceType | null) {
-    return STATUTS.find((s) => s.value === statut)?.label ?? 'Non pointé';
+    return STATUTS.find((s) => s.value === statut)?.label ?? 'Pas encore pointé';
 }
 
 const ETATS: Record<etatEvenementType, string> = {

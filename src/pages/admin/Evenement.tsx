@@ -279,7 +279,7 @@ function Evenement() {
                           color="warning.main"
                           display="block"
                         >
-                          {sortie.nbNonPointes} non pointé(s)
+                          {sortie.nbNonPointes} pas encore pointé(s)
                         </Typography>
                       )}
                   </TableCell>
