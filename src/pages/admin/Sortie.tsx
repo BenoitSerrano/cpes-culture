@@ -47,6 +47,7 @@ function Sortie() {
         ({ etudiantId, statut }: { etudiantId: string; statut: statutPresenceType | null }) =>
             api.pointer(sortieId, etudiantId, statut),
     );
+    const [listeOuverte, setListeOuverte] = useState(false);
     const inscrire = useAction((etudiantId: string) => api.inscrire(sortieId, etudiantId), {
         succes: 'Étudiant inscrit.',
         onSuccess: () => setCandidat(null),
@@ -183,7 +184,25 @@ function Sortie() {
                             sx={{ flexGrow: 1 }}
                             options={candidatsTries}
                             value={candidat}
-                            onChange={(_e, valeur) => setCandidat(valeur)}
+                            // Entrée inscrit directement l'étudiant surligné ; un clic le sélectionne
+                            // seulement (le bouton « Inscrire » confirme).
+                            autoHighlight
+                            open={listeOuverte}
+                            onOpen={() => setListeOuverte(true)}
+                            onClose={() => setListeOuverte(false)}
+                            onChange={(event, valeur) => {
+                                setCandidat(valeur);
+                                if (event.type === 'keydown' && valeur && !valeur.raison && !inscrire.isPending) {
+                                    inscrire.mutate(valeur.id);
+                                }
+                            }}
+                            onKeyDown={(event) => {
+                                // Liste fermée et étudiant déjà sélectionné : Entrée l'inscrit aussi.
+                                if (event.key === 'Enter' && !listeOuverte && candidat && !inscrire.isPending) {
+                                    event.preventDefault();
+                                    inscrire.mutate(candidat.id);
+                                }
+                            }}
                             getOptionLabel={(c) => `${c.prenom} ${c.nom} (${c.parcoursNom})`}
                             getOptionDisabled={(c) => !!c.raison}
                             renderOption={(props, c) => (
