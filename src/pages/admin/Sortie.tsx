@@ -115,6 +115,59 @@ function Sortie() {
                     Exporter en CSV
                 </Button>
             </Box>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <Autocomplete
+                    sx={{ flexGrow: 1 }}
+                    options={candidatsTries}
+                    value={candidat}
+                    // Entrée inscrit directement l'étudiant surligné ; un clic le sélectionne
+                    // seulement (le bouton « Inscrire » confirme).
+                    autoHighlight
+                    open={listeOuverte}
+                    onOpen={() => setListeOuverte(true)}
+                    onClose={() => setListeOuverte(false)}
+                    onChange={(event, valeur) => {
+                        setCandidat(valeur);
+                        if (event.type === 'keydown' && valeur && !valeur.raison && !inscrire.isPending) {
+                            inscrire.mutate(valeur.id);
+                        }
+                    }}
+                    onKeyDown={(event) => {
+                        // Liste fermée et étudiant déjà sélectionné : Entrée l'inscrit aussi.
+                        if (event.key === 'Enter' && !listeOuverte && candidat && !inscrire.isPending) {
+                            event.preventDefault();
+                            inscrire.mutate(candidat.id);
+                        }
+                    }}
+                    getOptionLabel={(c) => `${c.prenom} ${c.nom} (${c.parcoursNom})`}
+                    getOptionDisabled={(c) => !!c.raison}
+                    renderOption={(props, c) => (
+                        <li {...props} key={c.id}>
+                            <Box>
+                                <Typography>
+                                    {c.prenom} {c.nom}{' '}
+                                    <Typography component="span" color="text.secondary" variant="body2">
+                                        {c.parcoursNom} · {c.email}
+                                    </Typography>
+                                </Typography>
+                                {c.raisonMessage && (
+                                    <Typography variant="caption" color="text.secondary">
+                                        {c.raisonMessage}
+                                    </Typography>
+                                )}
+                            </Box>
+                        </li>
+                    )}
+                    renderInput={(params) => <TextField {...params} label="Inscrire un étudiant" />}
+                />
+                <Button
+                    variant="contained"
+                    disabled={!candidat || inscrire.isPending}
+                    onClick={() => candidat && inscrire.mutate(candidat.id)}
+                >
+                    Inscrire
+                </Button>
+            </Stack>
             {!s.pointable && s.inscrits.length > 0 && (
                 <Alert severity="info">Le pointage sera possible à partir du jour de la sortie.</Alert>
             )}
@@ -176,64 +229,6 @@ function Sortie() {
                 </TableContainer>
             )}
 
-            <Paper sx={{ p: 3 }}>
-                <Stack spacing={2}>
-                    <Typography variant="h3">Inscrire un étudiant</Typography>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                        <Autocomplete
-                            sx={{ flexGrow: 1 }}
-                            options={candidatsTries}
-                            value={candidat}
-                            // Entrée inscrit directement l'étudiant surligné ; un clic le sélectionne
-                            // seulement (le bouton « Inscrire » confirme).
-                            autoHighlight
-                            open={listeOuverte}
-                            onOpen={() => setListeOuverte(true)}
-                            onClose={() => setListeOuverte(false)}
-                            onChange={(event, valeur) => {
-                                setCandidat(valeur);
-                                if (event.type === 'keydown' && valeur && !valeur.raison && !inscrire.isPending) {
-                                    inscrire.mutate(valeur.id);
-                                }
-                            }}
-                            onKeyDown={(event) => {
-                                // Liste fermée et étudiant déjà sélectionné : Entrée l'inscrit aussi.
-                                if (event.key === 'Enter' && !listeOuverte && candidat && !inscrire.isPending) {
-                                    event.preventDefault();
-                                    inscrire.mutate(candidat.id);
-                                }
-                            }}
-                            getOptionLabel={(c) => `${c.prenom} ${c.nom} (${c.parcoursNom})`}
-                            getOptionDisabled={(c) => !!c.raison}
-                            renderOption={(props, c) => (
-                                <li {...props} key={c.id}>
-                                    <Box>
-                                        <Typography>
-                                            {c.prenom} {c.nom}{' '}
-                                            <Typography component="span" color="text.secondary" variant="body2">
-                                                {c.parcoursNom} · {c.email}
-                                            </Typography>
-                                        </Typography>
-                                        {c.raisonMessage && (
-                                            <Typography variant="caption" color="text.secondary">
-                                                {c.raisonMessage}
-                                            </Typography>
-                                        )}
-                                    </Box>
-                                </li>
-                            )}
-                            renderInput={(params) => <TextField {...params} label="Étudiant" />}
-                        />
-                        <Button
-                            variant="contained"
-                            disabled={!candidat || inscrire.isPending}
-                            onClick={() => candidat && inscrire.mutate(candidat.id)}
-                        >
-                            Inscrire
-                        </Button>
-                    </Stack>
-                </Stack>
-            </Paper>
 
             <Confirmation
                 ouvert={!!aDesinscrire}
