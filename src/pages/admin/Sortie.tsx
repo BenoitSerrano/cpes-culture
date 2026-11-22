@@ -19,6 +19,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
@@ -121,7 +122,9 @@ function Sortie() {
                                         </Link>
                                         {inscrit.boursier && <Chip label="Boursier" variant="outlined" sx={{ ml: 1 }} />}
                                     </TableCell>
-                                    <TableCell>{inscrit.parcoursNom}</TableCell>
+                                    <TableCell>
+                                        <BadgeParcours nom={inscrit.parcoursNom} couleur={inscrit.parcoursCouleur} />
+                                    </TableCell>
                                     <TableCell sx={{ minWidth: 220 }}>
                                         <TextField
                                             select
@@ -158,9 +161,6 @@ function Sortie() {
             <Paper sx={{ p: 3 }}>
                 <Stack spacing={2}>
                     <Typography variant="h3">Inscrire un étudiant</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Les mêmes règles que pour les étudiants s'appliquent.
-                    </Typography>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                         <Autocomplete
                             sx={{ flexGrow: 1 }}

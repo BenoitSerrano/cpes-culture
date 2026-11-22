@@ -21,6 +21,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
@@ -85,7 +86,11 @@ function Evenement() {
                 </Button>
                 <Stack direction="row" spacing={1} sx={{ mb: 1 }} flexWrap="wrap" useFlexGap>
                     <Chip label={ETATS[e.etat]} color={e.etat === 'ouvert' ? 'success' : 'default'} />
-                    <Chip label={e.bonus ? 'Bonus' : `Parcours ${e.parcoursNom}`} variant="outlined" />
+                    {e.bonus ? (
+                        <Chip label="Bonus" variant="outlined" />
+                    ) : (
+                        <BadgeParcours nom={e.parcoursNom} couleur={e.parcoursCouleur} prefixe />
+                    )}
                     {e.ouvertAutresParcoursLe && <Chip label="Ouvert aux autres parcours" />}
                 </Stack>
                 <Typography variant="h1">{e.nom}</Typography>

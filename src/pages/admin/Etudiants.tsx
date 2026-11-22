@@ -27,6 +27,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useQuery } from '@tanstack/react-query';
 import { ChangeEvent, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
@@ -160,7 +161,11 @@ function Etudiants() {
                                                 {e.email}
                                             </Typography>
                                         </TableCell>
-                                        {!parcoursId && <TableCell>{e.parcoursNom}</TableCell>}
+                                        {!parcoursId && (
+                                            <TableCell>
+                                                <BadgeParcours nom={e.parcoursNom} couleur={e.parcoursCouleur} />
+                                            </TableCell>
+                                        )}
                                         <TableCell>
                                             <OuiNon valeur={e.boursier} label="Boursier" />
                                         </TableCell>

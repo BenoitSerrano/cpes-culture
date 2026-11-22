@@ -2,36 +2,66 @@ import { Box, Button, Divider, IconButton, Paper, Stack, TextField, Tooltip, Typ
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useQuery } from '@tanstack/react-query';
-import { FormEvent, useState } from 'react';
+import { ChangeEvent, FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Erreur } from '../../components/Erreur';
 import { api } from '../../lib/api';
 import { useAction } from '../../lib/useAction';
 import type { parcoursType } from '../../types';
 
+const COULEUR_PAR_DEFAUT = '#6B7280';
+
+type saisieType = { nom: string; couleur: string };
+
+function SelecteurCouleur(props: { valeur: string; onChange: (couleur: string) => void }) {
+    return (
+        <Tooltip title="Couleur du badge">
+            <Box
+                component="input"
+                type="color"
+                value={props.valeur}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => props.onChange(e.target.value.toUpperCase())}
+                aria-label="Couleur du badge"
+                sx={{
+                    width: 40,
+                    height: 40,
+                    p: 0.5,
+                    border: 1,
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    bgcolor: 'background.paper',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                }}
+            />
+        </Tooltip>
+    );
+}
+
 function Parcours() {
     const parcours = useQuery({ queryKey: ['admin', 'parcours'], queryFn: api.getParcours });
-    const [nom, setNom] = useState('');
-    const [edite, setEdite] = useState<{ id: string; nom: string }>();
+    const [nouveau, setNouveau] = useState<saisieType>({ nom: '', couleur: COULEUR_PAR_DEFAUT });
+    const [edite, setEdite] = useState<saisieType & { id: string }>();
 
-    const creer = useAction((valeur: string) => api.createParcours(valeur), {
+    const creer = useAction((saisie: saisieType) => api.createParcours(saisie.nom, saisie.couleur), {
         succes: 'Parcours créé.',
-        onSuccess: () => setNom(''),
+        onSuccess: () => setNouveau({ nom: '', couleur: COULEUR_PAR_DEFAUT }),
     });
-    const renommer = useAction(({ id, nom }: { id: string; nom: string }) => api.renameParcours(id, nom), {
-        succes: 'Parcours renommé.',
-        onSuccess: () => setEdite(undefined),
-    });
+    const modifier = useAction(
+        ({ id, nom, couleur }: saisieType & { id: string }) => api.updateParcours(id, { nom, couleur }),
+        { succes: 'Parcours modifié.', onSuccess: () => setEdite(undefined) },
+    );
     const supprimer = useAction((id: string) => api.deleteParcours(id), { succes: 'Parcours supprimé.' });
 
     const ajouter = (event: FormEvent) => {
         event.preventDefault();
-        if (nom.trim()) creer.mutate(nom.trim());
+        if (nouveau.nom.trim()) creer.mutate({ ...nouveau, nom: nouveau.nom.trim() });
     };
     const enregistrer = (event: FormEvent) => {
         event.preventDefault();
-        if (edite?.nom.trim()) renommer.mutate({ id: edite.id, nom: edite.nom.trim() });
+        if (edite?.nom.trim()) modifier.mutate({ ...edite, nom: edite.nom.trim() });
     };
 
     return (
@@ -42,9 +72,15 @@ function Parcours() {
                 </Button>
                 <Typography variant="h1">Parcours</Typography>
             </Box>
-            <Stack direction="row" spacing={1} component="form" onSubmit={ajouter}>
-                <TextField label="Nouveau parcours" value={nom} onChange={(e) => setNom(e.target.value)} sx={{ flexGrow: 1 }} />
-                <Button type="submit" variant="contained" disabled={!nom.trim() || creer.isPending}>
+            <Stack direction="row" spacing={1} component="form" onSubmit={ajouter} alignItems="center">
+                <SelecteurCouleur valeur={nouveau.couleur} onChange={(couleur) => setNouveau({ ...nouveau, couleur })} />
+                <TextField
+                    label="Nouveau parcours"
+                    value={nouveau.nom}
+                    onChange={(e) => setNouveau({ ...nouveau, nom: e.target.value })}
+                    sx={{ flexGrow: 1 }}
+                />
+                <Button type="submit" variant="contained" disabled={!nouveau.nom.trim() || creer.isPending}>
                     Ajouter
                 </Button>
             </Stack>
@@ -58,14 +94,25 @@ function Parcours() {
                         {parcours.data.map((p: parcoursType) => (
                             <Box key={p.id} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
                                 {edite?.id === p.id ? (
-                                    <Stack direction="row" spacing={1} component="form" onSubmit={enregistrer} sx={{ flexGrow: 1 }}>
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        component="form"
+                                        onSubmit={enregistrer}
+                                        alignItems="center"
+                                        sx={{ flexGrow: 1 }}
+                                    >
+                                        <SelecteurCouleur
+                                            valeur={edite.couleur}
+                                            onChange={(couleur) => setEdite({ ...edite, couleur })}
+                                        />
                                         <TextField
                                             autoFocus
                                             value={edite.nom}
-                                            onChange={(e) => setEdite({ id: p.id, nom: e.target.value })}
+                                            onChange={(e) => setEdite({ ...edite, nom: e.target.value })}
                                             sx={{ flexGrow: 1 }}
                                         />
-                                        <Button type="submit" variant="contained" disabled={renommer.isPending}>
+                                        <Button type="submit" variant="contained" disabled={modifier.isPending}>
                                             Enregistrer
                                         </Button>
                                         <Button color="inherit" onClick={() => setEdite(undefined)}>
@@ -75,13 +122,16 @@ function Parcours() {
                                 ) : (
                                     <>
                                         <Box sx={{ flexGrow: 1 }}>
-                                            <Typography fontWeight={500}>{p.nom}</Typography>
-                                            <Typography variant="body2" color="text.secondary">
+                                            <BadgeParcours nom={p.nom} couleur={p.couleur} />
+                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                                                 {p.nbEtudiants} étudiant(s) · {p.nbEvenements} évènement(s)
                                             </Typography>
                                         </Box>
-                                        <Tooltip title="Renommer">
-                                            <IconButton size="small" onClick={() => setEdite({ id: p.id, nom: p.nom })}>
+                                        <Tooltip title="Modifier">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => setEdite({ id: p.id, nom: p.nom, couleur: p.couleur })}
+                                            >
                                                 <EditOutlinedIcon fontSize="small" />
                                             </IconButton>
                                         </Tooltip>

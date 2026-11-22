@@ -2,6 +2,7 @@ import { Box, Button, Chip, Divider, Paper, Stack, Typography } from '@mui/mater
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
@@ -53,9 +54,10 @@ function Etudiant() {
                     {e.prenom} {e.nom}
                 </Typography>
                 <Typography color="text.secondary">
-                    {e.email} · Parcours {e.parcoursNom}
+                    {e.email}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ mt: 1 }} flexWrap="wrap" useFlexGap>
+                    <BadgeParcours nom={e.parcoursNom} couleur={e.parcoursCouleur} prefixe />
                     <Chip
                         label={e.cotisationPayee ? 'Cotisation payée' : 'Cotisation non payée'}
                         color={e.cotisationPayee ? 'success' : 'warning'}

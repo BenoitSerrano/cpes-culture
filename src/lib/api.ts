@@ -82,8 +82,10 @@ const api = {
 
     // Admin : parcours
     getParcours: () => call<parcoursType[]>('admin/parcours'),
-    createParcours: (nom: string) => call<parcoursType>('admin/parcours', 'POST', { nom }),
-    renameParcours: (id: string, nom: string) => call(`admin/parcours/${id}`, 'PATCH', { nom }),
+    createParcours: (nom: string, couleur: string) =>
+        call<parcoursType>('admin/parcours', 'POST', { nom, couleur }),
+    updateParcours: (id: string, dto: { nom?: string; couleur?: string }) =>
+        call(`admin/parcours/${id}`, 'PATCH', dto),
     deleteParcours: (id: string) => call(`admin/parcours/${id}`, 'DELETE'),
     getRecapitulatifParcours: (id: string) =>
         call<recapitulatifParcoursType>(`admin/parcours/${id}/recapitulatif`),

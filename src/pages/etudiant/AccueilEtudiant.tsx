@@ -1,6 +1,7 @@
 import { Alert, Box, Button, Chip, Divider, Paper, Stack, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
@@ -27,7 +28,9 @@ function AccueilEtudiant({ me }: { me: etudiantMeType }) {
         <Stack spacing={3}>
             <Box>
                 <Typography variant="h1">Bonjour {me.etudiant.prenom}</Typography>
-                <Typography color="text.secondary">Parcours {me.etudiant.parcoursNom}</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                    <BadgeParcours nom={me.etudiant.parcoursNom} couleur={me.etudiant.parcoursCouleur} prefixe />
+                </Box>
             </Box>
 
             {!me.etudiant.cotisationPayee && (
@@ -101,7 +104,7 @@ function CarteEvenement(props: {
                         {evenement.bonus ? (
                             <Chip label="Bonus" variant="outlined" />
                         ) : (
-                            <Chip label={`Parcours ${evenement.parcoursNom}`} variant="outlined" />
+                            <BadgeParcours nom={evenement.parcoursNom} couleur={evenement.parcoursCouleur} prefixe />
                         )}
                         {evenement.horsParcours && <Chip label="Ouvert aux autres parcours" />}
                     </Stack>

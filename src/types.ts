@@ -25,7 +25,11 @@ type meType =
     | {
           role: 'etudiant';
           email: string;
-          etudiant: etudiantType & { parcoursNom: string; aAbsenceSansJustificatif: boolean };
+          etudiant: etudiantType & {
+              parcoursNom: string;
+              parcoursCouleur: string | null;
+              aAbsenceSansJustificatif: boolean;
+          };
       };
 
 type sortieEtudiantType = {
@@ -46,6 +50,7 @@ type evenementEtudiantType = {
     lieu: string | null;
     bonus: boolean;
     parcoursNom: string | null;
+    parcoursCouleur: string | null;
     horsParcours: boolean;
     sorties: sortieEtudiantType[];
 };
@@ -60,7 +65,7 @@ type inscriptionEtudiantType = {
     statut: statutPresenceType | null;
 };
 
-type parcoursType = { id: string; nom: string; nbEtudiants: number; nbEvenements: number };
+type parcoursType = { id: string; nom: string; couleur: string; nbEtudiants: number; nbEvenements: number };
 
 type compteursType = {
     nbInscriptions: number;
@@ -69,7 +74,7 @@ type compteursType = {
     nbAbsentAvecJustificatif: number;
 };
 
-type etudiantAdminType = etudiantType & compteursType & { parcoursNom: string };
+type etudiantAdminType = etudiantType & compteursType & { parcoursNom: string; parcoursCouleur: string | null };
 
 type ficheEtudiantType = etudiantAdminType & {
     inscriptions: (inscriptionEtudiantType & { evenementId: string })[];
@@ -92,6 +97,7 @@ type evenementAdminType = evenementType & {
     slug: string;
     bonus: boolean;
     parcoursNom: string | null;
+    parcoursCouleur: string | null;
     etat: etatEvenementType;
     nbSorties: number;
     premierDebut: string | null;
@@ -109,6 +115,7 @@ type evenementDetailType = evenementType & {
     slug: string;
     bonus: boolean;
     parcoursNom: string | null;
+    parcoursCouleur: string | null;
     etat: etatEvenementType;
     sorties: (sortieType & { nbInscrits: number; nbNonPointes: number })[];
     progressionParcours: {
@@ -119,9 +126,13 @@ type evenementDetailType = evenementType & {
 };
 
 type sortieDetailType = sortieType & {
-    evenement: evenementType & { bonus: boolean; parcoursNom: string | null };
+    evenement: evenementType & { bonus: boolean; parcoursNom: string | null; parcoursCouleur: string | null };
     pointable: boolean;
-    inscrits: (etudiantType & { parcoursNom: string; statut: statutPresenceType | null })[];
+    inscrits: (etudiantType & {
+        parcoursNom: string;
+        parcoursCouleur: string | null;
+        statut: statutPresenceType | null;
+    })[];
     candidats: {
         id: string;
         nom: string;

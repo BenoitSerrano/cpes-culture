@@ -15,6 +15,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Erreur } from '../../components/Erreur';
 import { api, evenementDtoType } from '../../lib/api';
@@ -96,7 +97,7 @@ function Evenements() {
                                                     <Chip label="Bonus" variant="outlined" />
                                                 ) : (
                                                     <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                                                        <Chip label={evenement.parcoursNom} variant="outlined" />
+                                                        <BadgeParcours nom={evenement.parcoursNom} couleur={evenement.parcoursCouleur} />
                                                         {evenement.ouvertAutresParcoursLe && <Chip label="Ouvert à tous" />}
                                                     </Stack>
                                                 )}
