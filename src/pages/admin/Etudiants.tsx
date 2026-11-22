@@ -32,6 +32,7 @@ import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
 import { api } from '../../lib/api';
+import { useTri } from '../../lib/tri';
 import { useAction } from '../../lib/useAction';
 import type {
     apercuImportType,
@@ -64,7 +65,6 @@ function Etudiants() {
     });
     const colonnesEvenements = parcoursId ? (recapitulatif.data?.evenements ?? []) : [];
     const [cotisation, setCotisation] = useState<filtreBooleenType>('');
-    const [boursier, setBoursier] = useState<filtreBooleenType>('');
     const [creation, setCreation] = useState(false);
     const [importOuvert, setImportOuvert] = useState(false);
     const [cotisationAChanger, setCotisationAChanger] = useState<etudiantAdminType>();
@@ -86,10 +86,24 @@ function Etudiants() {
             (e) =>
                 (!r || normaliser(`${e.prenom} ${e.nom} ${e.email}`).includes(r)) &&
                 (!parcoursId || e.parcoursId === parcoursId) &&
-                correspond(cotisation, e.cotisationPayee) &&
-                correspond(boursier, e.boursier),
+                correspond(cotisation, e.cotisationPayee),
         );
-    }, [etudiants.data, recherche, parcoursId, cotisation, boursier]);
+    }, [etudiants.data, recherche, parcoursId, cotisation]);
+
+    const colonnesTri: Record<string, (e: etudiantAdminType) => string | number | boolean | null> = {
+        etudiant: (e) => `${e.nom} ${e.prenom}`,
+        parcours: (e) => e.parcoursNom,
+        statut: (e) => e.boursier,
+        cotisation: (e) => e.cotisationPayee,
+        presences: (e) => e.nbPresent,
+    };
+    for (const evenement of colonnesEvenements) {
+        colonnesTri[`evenement:${evenement.id}`] = (e) => {
+            const statut = recapitulatif.data?.cellules[e.id]?.[evenement.id];
+            return statut ? ORDRE_STATUTS_RECAPITULATIF.indexOf(statut) : null;
+        };
+    }
+    const tri = useTri(filtres, colonnesTri, { cle: 'etudiant' });
 
     return (
         <Stack spacing={3}>
@@ -121,7 +135,6 @@ function Etudiants() {
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                 <TextField label="Rechercher" value={recherche} onChange={(e) => setRecherche(e.target.value)} sx={{ flexGrow: 1 }} />
                 <FiltreBooleen label="Cotisation payée" valeur={cotisation} onChange={setCotisation} />
-                <FiltreBooleen label="Boursier" valeur={boursier} onChange={setBoursier} />
             </Stack>
 
             {etudiants.isPending && <Chargement />}
@@ -136,22 +149,24 @@ function Etudiants() {
                         <Table size="small">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>Étudiant</TableCell>
-                                    {!parcoursId && <TableCell>Parcours</TableCell>}
-                                    <TableCell>Boursier</TableCell>
-                                    <TableCell>Cotisation</TableCell>
-                                    {!parcoursId && <TableCell>Présences</TableCell>}
-                                    {colonnesEvenements.map((evenement) => (
-                                        <TableCell key={evenement.id} sx={{ whiteSpace: 'nowrap' }}>
+                                    {tri.enTete('etudiant', 'Étudiant')}
+                                    {!parcoursId && tri.enTete('parcours', 'Parcours')}
+                                    {tri.enTete('statut', 'Statut')}
+                                    {tri.enTete('cotisation', 'Cotisation')}
+                                    {!parcoursId && tri.enTete('presences', 'Présences')}
+                                    {colonnesEvenements.map((evenement) =>
+                                        tri.enTete(
+                                            `evenement:${evenement.id}`,
                                             <Tooltip title={evenement.nom}>
-                                                <Link to={`/admin/evenements/${evenement.id}`}>{evenement.slug}</Link>
-                                            </Tooltip>
-                                        </TableCell>
-                                    ))}
+                                                <span>{evenement.slug}</span>
+                                            </Tooltip>,
+                                            { sx: { whiteSpace: 'nowrap' } },
+                                        ),
+                                    )}
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {filtres.map((e) => (
+                                {tri.lignes.map((e) => (
                                     <TableRow key={e.id} hover>
                                         <TableCell>
                                             <Link to={`/admin/etudiants/${e.id}`}>
@@ -167,7 +182,7 @@ function Etudiants() {
                                             </TableCell>
                                         )}
                                         <TableCell>
-                                            <OuiNon valeur={e.boursier} label="Boursier" />
+                                            {e.boursier ? 'Boursier' : null}
                                         </TableCell>
                                         <TableCell>
                                             {/* Action à sens unique : le retour à « non payée » se fait
@@ -261,6 +276,9 @@ function FiltreBooleen(props: {
     );
 }
 
+// Ordre de tri : du plus problématique au plus satisfaisant.
+const ORDRE_STATUTS_RECAPITULATIF: statutRecapitulatifType[] = ['non_inscrit', 'abi', 'non_pointe', 'abj', 'ok'];
+
 const STATUTS_RECAPITULATIF: Record<
     statutRecapitulatifType,
     { label: string; titre: string; couleur?: { bg: string; fg: string } }
@@ -323,6 +341,21 @@ function ImportCsv({ onFermer }: { onFermer: () => void }) {
         onSuccess: onFermer,
     });
 
+    const lignesApercu = useMemo(
+        () => [
+            ...(apercu?.aCreer ?? []).map((l) => ({ ...l, action: 'Création' })),
+            ...(apercu?.aMettreAJour ?? []).map((l) => ({ ...l, action: 'Mise à jour' })),
+        ],
+        [apercu],
+    );
+    const triApercu = useTri(lignesApercu, {
+        action: (l) => l.action,
+        etudiant: (l) => `${l.nom} ${l.prenom}`,
+        parcours: (l) => l.parcoursNom,
+        boursier: (l) => l.boursier,
+        cotisation: (l) => l.cotisationPayee,
+    });
+
     const choisirFichier = async (event: ChangeEvent<HTMLInputElement>) => {
         const fichier = event.target.files?.[0];
         if (!fichier) return;
@@ -380,18 +413,15 @@ function ImportCsv({ onFermer }: { onFermer: () => void }) {
                                     <Table size="small" stickyHeader>
                                         <TableHead>
                                             <TableRow>
-                                                <TableCell />
-                                                <TableCell>Étudiant</TableCell>
-                                                <TableCell>Parcours</TableCell>
-                                                <TableCell>Boursier</TableCell>
-                                                <TableCell>Cotisation</TableCell>
+                                                {triApercu.enTete('action', 'Action')}
+                                                {triApercu.enTete('etudiant', 'Étudiant')}
+                                                {triApercu.enTete('parcours', 'Parcours')}
+                                                {triApercu.enTete('boursier', 'Boursier')}
+                                                {triApercu.enTete('cotisation', 'Cotisation')}
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {[
-                                                ...apercu.aCreer.map((l) => ({ ...l, action: 'Création' })),
-                                                ...apercu.aMettreAJour.map((l) => ({ ...l, action: 'Mise à jour' })),
-                                            ].map((l) => (
+                                            {triApercu.lignes.map((l) => (
                                                 <TableRow key={l.ligne}>
                                                     <TableCell>{l.action}</TableCell>
                                                     <TableCell>

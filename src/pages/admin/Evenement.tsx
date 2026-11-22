@@ -29,6 +29,7 @@ import { Infos, Lieu } from '../../components/Lieu';
 import { api, evenementDtoType, sortieDtoType } from '../../lib/api';
 import { formatDateCourte, formatDateHeure } from '../../lib/format';
 import { ETATS } from '../../lib/labels';
+import { useTri } from '../../lib/tri';
 import { useAction } from '../../lib/useAction';
 import type { evenementDetailType } from '../../types';
 import { FormulaireEvenement, FormulaireSortie } from './formulaires';
@@ -71,6 +72,15 @@ function Evenement() {
         succes: 'Sortie supprimée.',
         onSuccess: () => setSortieSupprimee(undefined),
     });
+
+    const triSorties = useTri(
+        evenement.data?.sorties ?? [],
+        {
+            date: (s) => new Date(s.debut).getTime(),
+            inscrits: (s) => s.nbInscrits,
+        },
+        { cle: 'date' },
+    );
 
     if (evenement.isPending) return <Chargement />;
     if (evenement.isError) return <Erreur error={evenement.error} />;
@@ -191,13 +201,13 @@ function Evenement() {
                     <Table size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell>Date</TableCell>
-                                <TableCell>Inscrits</TableCell>
+                                {triSorties.enTete('date', 'Date')}
+                                {triSorties.enTete('inscrits', 'Inscrits')}
                                 <TableCell align="right" />
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {e.sorties.map((sortie) => (
+                            {triSorties.lignes.map((sortie) => (
                                 <TableRow key={sortie.id} hover>
                                     <TableCell>
                                         <Link to={`/admin/sorties/${sortie.id}`}>{formatDateHeure(sortie.debut)}</Link>

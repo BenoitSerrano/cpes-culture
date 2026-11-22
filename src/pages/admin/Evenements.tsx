@@ -22,8 +22,9 @@ import { Lieu } from '../../components/Lieu';
 import { api, evenementDtoType } from '../../lib/api';
 import { formatDateCourte } from '../../lib/format';
 import { ETATS } from '../../lib/labels';
+import { useTri } from '../../lib/tri';
 import { useAction } from '../../lib/useAction';
-import type { etatEvenementType } from '../../types';
+import type { etatEvenementType, evenementAdminType } from '../../types';
 import { FormulaireEvenement } from './formulaires';
 
 const ORDRE_ETATS: etatEvenementType[] = ['ouvert', 'brouillon', 'passe'];
@@ -68,53 +69,7 @@ function Evenements() {
                 return (
                     <Stack spacing={1} key={etat}>
                         <Typography variant="h2">{ETATS[etat]}</Typography>
-                        <TableContainer component={Paper}>
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Évènement</TableCell>
-                                        <TableCell>Parcours</TableCell>
-                                        <TableCell>Sorties</TableCell>
-                                        <TableCell>Dates</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {liste.map((evenement) => (
-                                        <TableRow
-                                            key={evenement.id}
-                                            hover
-                                            component={Link}
-                                            to={`/admin/evenements/${evenement.id}`}
-                                            sx={{ textDecoration: 'none' }}
-                                        >
-                                            <TableCell>
-                                                <Typography fontWeight={500}>{evenement.nom}</Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {evenement.institution} <Lieu url={evenement.lieu} compact />
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell>
-                                                {evenement.bonus ? (
-                                                    <Chip label="Bonus" variant="outlined" />
-                                                ) : (
-                                                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                                                        <BadgeParcours nom={evenement.parcoursNom} couleur={evenement.parcoursCouleur} />
-                                                        {evenement.ouvertAutresParcoursLe && <Chip label="Ouvert à tous" />}
-                                                    </Stack>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>{evenement.nbSorties}</TableCell>
-                                            <TableCell>
-                                                {evenement.premierDebut ? formatDateCourte(evenement.premierDebut) : '—'}
-                                                {evenement.dernierDebut &&
-                                                    evenement.dernierDebut !== evenement.premierDebut &&
-                                                    ` → ${formatDateCourte(evenement.dernierDebut)}`}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+                        <TableauEvenements liste={liste} />
                     </Stack>
                 );
             })}
@@ -128,6 +83,66 @@ function Evenements() {
                 />
             )}
         </Stack>
+    );
+}
+
+// Un tableau par état ; chacun garde son propre tri.
+function TableauEvenements({ liste }: { liste: evenementAdminType[] }) {
+    const tri = useTri(liste, {
+        evenement: (e) => e.nom,
+        parcours: (e) => (e.bonus ? 'Bonus' : e.parcoursNom),
+        sorties: (e) => e.nbSorties,
+        dates: (e) => (e.premierDebut ? new Date(e.premierDebut).getTime() : null),
+    });
+
+    return (
+            <TableContainer component={Paper}>
+                <Table size="small">
+                    <TableHead>
+                        <TableRow>
+                            {tri.enTete('evenement', 'Évènement')}
+                            {tri.enTete('parcours', 'Parcours')}
+                            {tri.enTete('sorties', 'Sorties')}
+                            {tri.enTete('dates', 'Dates')}
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {tri.lignes.map((evenement) => (
+                            <TableRow
+                                key={evenement.id}
+                                hover
+                                component={Link}
+                                to={`/admin/evenements/${evenement.id}`}
+                                sx={{ textDecoration: 'none' }}
+                            >
+                                <TableCell>
+                                    <Typography fontWeight={500}>{evenement.nom}</Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {evenement.institution} <Lieu url={evenement.lieu} compact />
+                                    </Typography>
+                                </TableCell>
+                                <TableCell>
+                                    {evenement.bonus ? (
+                                        <Chip label="Bonus" variant="outlined" />
+                                    ) : (
+                                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                                            <BadgeParcours nom={evenement.parcoursNom} couleur={evenement.parcoursCouleur} />
+                                            {evenement.ouvertAutresParcoursLe && <Chip label="Ouvert à tous" />}
+                                        </Stack>
+                                    )}
+                                </TableCell>
+                                <TableCell>{evenement.nbSorties}</TableCell>
+                                <TableCell>
+                                    {evenement.premierDebut ? formatDateCourte(evenement.premierDebut) : '—'}
+                                    {evenement.dernierDebut &&
+                                        evenement.dernierDebut !== evenement.premierDebut &&
+                                        ` → ${formatDateCourte(evenement.dernierDebut)}`}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
     );
 }
 

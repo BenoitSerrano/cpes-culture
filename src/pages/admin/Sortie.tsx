@@ -29,6 +29,7 @@ import { getErrorMessage } from '../../lib/errors';
 import { formatDateHeure } from '../../lib/format';
 import { STATUTS, telechargerCsv } from '../../lib/labels';
 import { useNotify } from '../../lib/notify';
+import { useTri } from '../../lib/tri';
 import { useAction } from '../../lib/useAction';
 import type { sortieDetailType, statutPresenceType } from '../../types';
 
@@ -63,6 +64,17 @@ function Sortie() {
             notify(getErrorMessage(error), 'error');
         }
     };
+
+    const triInscrits = useTri(
+        sortie.data?.inscrits ?? [],
+        {
+            etudiant: (i) => `${i.nom} ${i.prenom}`,
+            parcours: (i) => i.parcoursNom,
+            // Non pointés d'abord, puis absences, puis présents.
+            presence: (i) => [null, 'absent_sans_justificatif', 'absent_avec_justificatif', 'present'].indexOf(i.statut),
+        },
+        { cle: 'etudiant' },
+    );
 
     if (sortie.isPending) return <Chargement />;
     if (sortie.isError) return <Erreur error={sortie.error} />;
@@ -112,14 +124,14 @@ function Sortie() {
                     <Table size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell>Étudiant</TableCell>
-                                <TableCell>Parcours</TableCell>
-                                <TableCell>Présence</TableCell>
+                                {triInscrits.enTete('etudiant', 'Étudiant')}
+                                {triInscrits.enTete('parcours', 'Parcours')}
+                                {triInscrits.enTete('presence', 'Présence')}
                                 <TableCell align="right" />
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {s.inscrits.map((inscrit) => (
+                            {triInscrits.lignes.map((inscrit) => (
                                 <TableRow key={inscrit.id}>
                                     <TableCell>
                                         <Link to={`/admin/etudiants/${inscrit.id}`}>
