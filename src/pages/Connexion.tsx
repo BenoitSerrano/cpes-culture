@@ -58,7 +58,7 @@ function Connexion() {
                     ) : (
                         <>
                             <Typography variant="body2" color="text.secondary">
-                                Si cette adresse est inscrite au programme, un code à 6 chiffres vient
+                                Un code à 6 chiffres vient
                                 d'être envoyé à <strong>{email.trim()}</strong>. Il est valable 10 minutes.
                             </Typography>
                             <TextField
