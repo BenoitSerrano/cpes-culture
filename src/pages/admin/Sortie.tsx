@@ -15,7 +15,11 @@ import {
     TableRow,
     TextField,
     Typography,
+    IconButton,
+    Tooltip,
 } from '@mui/material';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import PersonRemoveOutlinedIcon from '@mui/icons-material/PersonRemoveOutlined';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -78,7 +82,7 @@ function Sortie() {
             // Pas encore pointés d'abord, puis absences, puis présents.
             presence: (i) => [null, 'absent_sans_justificatif', 'absent_avec_justificatif', 'present'].indexOf(i.statut),
         },
-        { cle: 'nom' },
+        { cle: 'prenom' },
     );
 
     if (sortie.isPending) return <Chargement />;
@@ -116,9 +120,18 @@ function Sortie() {
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                 <Typography variant="h2">Inscrits</Typography>
-                <Button variant="outlined" onClick={exporter} disabled={s.inscrits.length === 0}>
-                    Exporter en CSV
-                </Button>
+                <Tooltip title={s.inscrits.length === 0 ? 'Aucun inscrit à exporter' : 'Exporter les inscrits en CSV'}>
+                    {/* span : l'infobulle reste visible quand le bouton est désactivé. */}
+                    <span>
+                        <IconButton
+                            aria-label="Exporter les inscrits en CSV"
+                            onClick={exporter}
+                            disabled={s.inscrits.length === 0}
+                        >
+                            <FileDownloadOutlinedIcon />
+                        </IconButton>
+                    </span>
+                </Tooltip>
             </Box>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <Autocomplete
@@ -238,9 +251,16 @@ function Sortie() {
                                         </TextField>
                                     </TableCell>
                                     <TableCell align="right">
-                                        <Button color="error" size="small" onClick={() => setADesinscrire(inscrit)}>
-                                            Désinscrire
-                                        </Button>
+                                        <Tooltip title="Désinscrire">
+                                            <IconButton
+                                                size="small"
+                                                color="error"
+                                                aria-label={`Désinscrire ${inscrit.prenom} ${inscrit.nom}`}
+                                                onClick={() => setADesinscrire(inscrit)}
+                                            >
+                                                <PersonRemoveOutlinedIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
                                     </TableCell>
                                 </TableRow>
                             ))}

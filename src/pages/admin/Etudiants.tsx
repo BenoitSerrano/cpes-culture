@@ -113,7 +113,7 @@ function Etudiants() {
             return statut ? ORDRE_STATUTS_RECAPITULATIF.indexOf(statut) : null;
         };
     }
-    const tri = useTri(filtres, colonnesTri, { cle: 'nom' });
+    const tri = useTri(filtres, colonnesTri, { cle: 'prenom' });
 
     return (
         <Stack spacing={3}>
