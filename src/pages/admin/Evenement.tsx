@@ -78,7 +78,13 @@ function Evenement() {
     ({ id, dto }: { id?: string; dto: sortieDtoType }) =>
       id ? api.updateSortie(id, dto) : api.createSortie(evenementId, dto),
     {
-      succes: "Sortie enregistrée.",
+      succes: (resultat) => {
+        const promus: string[] =
+          "promus" in resultat ? (resultat.promus as string[]) : [];
+        return promus.length === 0
+          ? "Sortie enregistrée."
+          : `Sortie enregistrée. ${promus.join(", ")} ${promus.length > 1 ? "sont inscrits" : "est inscrit"} depuis la liste d'attente.`;
+      },
       onSuccess: () => setSortieEditee(undefined),
     },
   );
@@ -284,6 +290,11 @@ function Evenement() {
                           {sortie.nbNonPointes} pas encore pointé(s)
                         </Typography>
                       )}
+                    {sortie.nbEnAttente > 0 && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {sortie.nbEnAttente} en liste d'attente
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
                     <Tooltip title="Modifier">

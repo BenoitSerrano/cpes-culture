@@ -40,6 +40,13 @@ type sortieEtudiantType = {
     inscrit: boolean;
     raison: raisonRefusType | null;
     raisonMessage: string | null;
+    // null hors évènements bonus.
+    listeAttente: {
+        nbEnAttente: number;
+        position: number | null;
+        peutRejoindre: boolean;
+        raisonMessage: string | null;
+    } | null;
 };
 
 type evenementEtudiantType = {
@@ -121,7 +128,7 @@ type evenementDetailType = evenementType & {
     parcoursNom: string | null;
     parcoursCouleur: string | null;
     etat: etatEvenementType;
-    sorties: (sortieType & { nbInscrits: number; nbNonPointes: number })[];
+    sorties: (sortieType & { nbInscrits: number; nbNonPointes: number; nbEnAttente: number })[];
     progressionParcours: {
         nbConcernes: number;
         nbInscrits: number;
@@ -146,6 +153,30 @@ type sortieDetailType = sortieType & {
         raison: raisonRefusType | null;
         raisonMessage: string | null;
     }[];
+    listeAttente: {
+        id: string;
+        nom: string;
+        prenom: string;
+        email: string;
+        parcoursNom: string;
+        parcoursCouleur: string | null;
+        position: number;
+        depuis: string;
+        // Pourquoi il serait sauté à la prochaine promotion (null = éligible).
+        raisonMessage: string | null;
+    }[];
+};
+
+type attenteEtudiantType = {
+    sortieId: string;
+    debut: string;
+    lieu: string | null;
+    lieuRendezVous: string | null;
+    evenementNom: string;
+    institution: string | null;
+    bonus: boolean;
+    position: number;
+    nbEnAttente: number;
 };
 
 type sortieAPointerType = {
@@ -191,6 +222,7 @@ export type {
     sortieType,
     evenementDetailType,
     sortieDetailType,
+    attenteEtudiantType,
     sortieAPointerType,
     apercuImportType,
     statutRecapitulatifType,

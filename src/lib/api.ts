@@ -1,6 +1,7 @@
 import { ApiError } from "./errors";
 import { tokenStorage } from "./storage";
 import type {
+  attenteEtudiantType,
   apercuImportType,
   etudiantAdminType,
   etudiantDtoType,
@@ -89,9 +90,14 @@ const api = {
     call<{
       aVenir: inscriptionEtudiantType[];
       historique: inscriptionEtudiantType[];
+      listeAttente: attenteEtudiantType[];
     }>("moi/inscriptions"),
   sInscrire: (sortieId: string) =>
     call<{ ok: true }>(`moi/sorties/${sortieId}/inscription`, "POST"),
+  rejoindreListeAttente: (sortieId: string) =>
+    call<{ position: number }>(`moi/sorties/${sortieId}/liste-attente`, "POST"),
+  quitterListeAttente: (sortieId: string) =>
+    call<{ ok: true }>(`moi/sorties/${sortieId}/liste-attente/quitter`, "POST"),
 
   // Admin : parcours
   getParcours: () => call<parcoursType[]>("admin/parcours"),
@@ -145,15 +151,21 @@ const api = {
   createSortie: (evenementId: string, dto: sortieDtoType) =>
     call<sortieType>(`admin/evenements/${evenementId}/sorties`, "POST", dto),
   getSortie: (id: string) => call<sortieDetailType>(`admin/sorties/${id}`),
+  // promus : étudiants inscrits automatiquement depuis la liste d'attente.
   updateSortie: (id: string, dto: Partial<sortieDtoType>) =>
-    call<sortieType>(`admin/sorties/${id}`, "PATCH", dto),
+    call<sortieType & { promus: string[] }>(`admin/sorties/${id}`, "PATCH", dto),
   deleteSortie: (id: string) => call(`admin/sorties/${id}`, "DELETE"),
   exporterSortie: (id: string) =>
     call<{ filename: string; csv: string }>(`admin/sorties/${id}/export`),
   inscrire: (sortieId: string, etudiantId: string) =>
     call(`admin/sorties/${sortieId}/inscriptions/${etudiantId}`, "POST"),
   desinscrire: (sortieId: string, etudiantId: string) =>
-    call(`admin/sorties/${sortieId}/inscriptions/${etudiantId}`, "DELETE"),
+    call<{ ok: true; promus: string[] }>(
+      `admin/sorties/${sortieId}/inscriptions/${etudiantId}`,
+      "DELETE",
+    ),
+  retirerDeListeAttente: (sortieId: string, etudiantId: string) =>
+    call(`admin/sorties/${sortieId}/liste-attente/${etudiantId}`, "DELETE"),
   pointer: (
     sortieId: string,
     etudiantId: string,

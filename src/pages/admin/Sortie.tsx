@@ -32,7 +32,7 @@ import { Infos, Lieu } from '../../components/Lieu';
 import { RendezVous } from '../../components/RendezVous';
 import { api } from '../../lib/api';
 import { getErrorMessage } from '../../lib/errors';
-import { formatDateHeure } from '../../lib/format';
+import { formatDateCourte, formatDateHeure } from '../../lib/format';
 import { STATUTS, telechargerCsv } from '../../lib/labels';
 import { useNotify } from '../../lib/notify';
 import { useTri } from '../../lib/tri';
@@ -41,6 +41,12 @@ import type { sortieDetailType, statutPresenceType } from '../../types';
 
 type inscritType = sortieDetailType['inscrits'][number];
 type candidatType = sortieDetailType['candidats'][number];
+
+// Message ajouté quand la liste d'attente a avancé.
+const messagePromus = (promus: string[]) =>
+    promus.length === 0
+        ? ''
+        : ` ${promus.join(', ')} ${promus.length > 1 ? 'sont inscrits' : 'est inscrit'} depuis la liste d'attente.`;
 
 function Sortie() {
     const { sortieId = '' } = useParams();
@@ -59,8 +65,13 @@ function Sortie() {
         onSuccess: () => setCandidat(null),
     });
     const desinscrire = useAction((etudiantId: string) => api.desinscrire(sortieId, etudiantId), {
-        succes: 'Étudiant désinscrit.',
+        succes: ({ promus }) => `Étudiant désinscrit.${messagePromus(promus)}`,
         onSuccess: () => setADesinscrire(undefined),
+    });
+    const [aRetirer, setARetirer] = useState<sortieDetailType['listeAttente'][number]>();
+    const retirer = useAction((etudiantId: string) => api.retirerDeListeAttente(sortieId, etudiantId), {
+        succes: "Étudiant retiré de la liste d'attente.",
+        onSuccess: () => setARetirer(undefined),
     });
 
     const exporter = async () => {
@@ -269,7 +280,83 @@ function Sortie() {
                 </TableContainer>
             )}
 
+            {s.evenement.bonus && (
+                <Stack spacing={1}>
+                    <Typography variant="h2">Liste d'attente</Typography>
+                    {s.listeAttente.length === 0 ? (
+                        <Typography color="text.secondary">Personne en attente.</Typography>
+                    ) : (
+                        <>
+                            <Typography variant="body2" color="text.secondary">
+                                Quand une place se libère (désinscription ou places ajoutées), le premier
+                                étudiant qui remplit encore les règles est inscrit automatiquement.
+                            </Typography>
+                            <TableContainer component={Paper}>
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>#</TableCell>
+                                            <TableCell>Prénom</TableCell>
+                                            <TableCell>Nom</TableCell>
+                                            <TableCell>Parcours</TableCell>
+                                            <TableCell>En attente depuis</TableCell>
+                                            <TableCell align="right" />
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {s.listeAttente.map((attente) => (
+                                            <TableRow key={attente.id}>
+                                                <TableCell>{attente.position}</TableCell>
+                                                <TableCell>
+                                                    <Link to={`/admin/etudiants/${attente.id}`}>{attente.prenom}</Link>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Link to={`/admin/etudiants/${attente.id}`}>{attente.nom}</Link>
+                                                    {attente.raisonMessage && (
+                                                        <Typography variant="caption" color="warning.main" display="block">
+                                                            Sera sauté : {attente.raisonMessage}
+                                                        </Typography>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <BadgeParcours nom={attente.parcoursNom} couleur={attente.parcoursCouleur} />
+                                                </TableCell>
+                                                <TableCell>{formatDateCourte(attente.depuis)}</TableCell>
+                                                <TableCell align="right">
+                                                    <Tooltip title="Retirer de la liste d'attente">
+                                                        <IconButton
+                                                            size="small"
+                                                            color="error"
+                                                            aria-label={`Retirer ${attente.prenom} ${attente.nom} de la liste d'attente`}
+                                                            onClick={() => setARetirer(attente)}
+                                                        >
+                                                            <PersonRemoveOutlinedIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </>
+                    )}
+                </Stack>
+            )}
 
+            <Confirmation
+                ouvert={!!aRetirer}
+                titre="Retirer de la liste d'attente ?"
+                libelle="Retirer"
+                danger
+                enCours={retirer.isPending}
+                onAnnuler={() => setARetirer(undefined)}
+                onConfirmer={() => aRetirer && retirer.mutate(aRetirer.id)}
+            >
+                <Typography>
+                    {aRetirer?.prenom} {aRetirer?.nom} perdra sa place ({aRetirer?.position}ᵉ) dans la file.
+                </Typography>
+            </Confirmation>
             <Confirmation
                 ouvert={!!aDesinscrire}
                 titre="Désinscrire cet étudiant ?"
