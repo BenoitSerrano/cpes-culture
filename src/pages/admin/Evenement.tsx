@@ -26,6 +26,7 @@ import { Chargement } from "../../components/Chargement";
 import { Confirmation } from "../../components/Confirmation";
 import { Erreur } from "../../components/Erreur";
 import { Infos, Lieu } from "../../components/Lieu";
+import { RendezVous } from "../../components/RendezVous";
 import { api, evenementDtoType, sortieDtoType } from "../../lib/api";
 import { formatDateCourte, formatDateHeure } from "../../lib/format";
 import { ETATS } from "../../lib/labels";
@@ -147,6 +148,7 @@ function Evenement() {
             <Infos>{[e.institution, e.lieu && <Lieu url={e.lieu} />]}</Infos>
           </Typography>
         )}
+        <RendezVous texte={e.lieuRendezVous} />
         {e.description && (
           <Typography sx={{ mt: 1, whiteSpace: "pre-line" }}>
             {e.description}
@@ -325,6 +327,7 @@ function Evenement() {
             institution: e.institution,
             description: e.description,
             lieu: e.lieu,
+            lieuRendezVous: e.lieuRendezVous,
             parcoursId: e.parcoursId,
           }}
           parcoursVerrouille={e.dateOuverture !== null}

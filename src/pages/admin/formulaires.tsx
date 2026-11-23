@@ -76,7 +76,14 @@ function FormulaireEvenement(props: {
     const parcours = useParcoursOptions();
     const institutions = useInstitutions();
     const [dto, setDto] = useState<evenementDtoType>(
-        props.initial ?? { nom: '', institution: '', description: '', lieu: '', parcoursId: null },
+        props.initial ?? {
+            nom: '',
+            institution: '',
+            description: '',
+            lieu: '',
+            lieuRendezVous: '',
+            parcoursId: null,
+        },
     );
     const lieuInvalide = !!dto.lieu?.trim() && !estLienGoogleMaps(dto.lieu);
 
@@ -92,6 +99,7 @@ function FormulaireEvenement(props: {
                     institution: dto.institution?.trim() || null,
                     description: dto.description || null,
                     lieu: dto.lieu?.trim() || null,
+                    lieuRendezVous: dto.lieuRendezVous?.trim() || null,
                 })
             }
         >
@@ -121,6 +129,14 @@ function FormulaireEvenement(props: {
                         : "Commun à toutes les sorties de l'évènement."
                 }
                 onChange={(e) => setDto({ ...dto, lieu: e.target.value })}
+            />
+            <TextField
+                label="Lieu de rendez-vous (facultatif)"
+                placeholder="Ex. : devant l'entrée principale, côté rue Auber"
+                multiline
+                minRows={2}
+                value={dto.lieuRendezVous ?? ''}
+                onChange={(e) => setDto({ ...dto, lieuRendezVous: e.target.value })}
             />
             <TextField
                 label="Parcours"

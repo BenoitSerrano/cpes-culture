@@ -5,6 +5,7 @@ import { Chargement } from '../../components/Chargement';
 import { Erreur } from '../../components/Erreur';
 import { StatutChip } from '../../components/StatutChip';
 import { Infos, Lieu } from '../../components/Lieu';
+import { RendezVous } from '../../components/RendezVous';
 import { api } from '../../lib/api';
 import { formatDateHeure } from '../../lib/format';
 import type { inscriptionEtudiantType } from '../../types';
@@ -61,6 +62,8 @@ function Section(props: {
                                             ]}
                                         </Infos>
                                     </Typography>
+                                    {/* Utile seulement pour les sorties à venir. */}
+                                    {!props.avecStatut && <RendezVous texte={ligne.lieuRendezVous} />}
                                 </Box>
                                 {props.avecStatut && <StatutChip statut={ligne.statut} />}
                             </Box>

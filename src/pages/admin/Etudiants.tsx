@@ -98,7 +98,9 @@ function Etudiants() {
     }, [etudiants.data, recherche, parcoursId, cotisation]);
 
     const colonnesTri: Record<string, (e: etudiantAdminType) => string | number | boolean | null> = {
-        etudiant: (e) => `${e.nom} ${e.prenom}`,
+        // Nom et prénom séparés : tri alphabétique par l'un ou par l'autre.
+        nom: (e) => `${e.nom} ${e.prenom}`,
+        prenom: (e) => `${e.prenom} ${e.nom}`,
         parcours: (e) => e.parcoursNom,
         statut: (e) => e.boursier,
         cotisation: (e) => e.cotisationPayee,
@@ -111,7 +113,7 @@ function Etudiants() {
             return statut ? ORDRE_STATUTS_RECAPITULATIF.indexOf(statut) : null;
         };
     }
-    const tri = useTri(filtres, colonnesTri, { cle: 'etudiant' });
+    const tri = useTri(filtres, colonnesTri, { cle: 'nom' });
 
     return (
         <Stack spacing={3}>
@@ -189,7 +191,8 @@ function Etudiants() {
                         <Table size="small">
                             <TableHead>
                                 <TableRow>
-                                    {tri.enTete('etudiant', 'Étudiant')}
+                                    {tri.enTete('nom', 'Nom')}
+                                    {tri.enTete('prenom', 'Prénom')}
                                     {!parcoursId && tri.enTete('parcours', 'Parcours')}
                                     {tri.enTete('statut', 'Statut')}
                                     {tri.enTete('cotisation', 'Cotisation')}
@@ -209,12 +212,13 @@ function Etudiants() {
                                 {tri.lignes.map((e) => (
                                     <TableRow key={e.id} hover>
                                         <TableCell>
-                                            <Link to={`/admin/etudiants/${e.id}`}>
-                                                {e.prenom} {e.nom}
-                                            </Link>
+                                            <Link to={`/admin/etudiants/${e.id}`}>{e.nom}</Link>
                                             <Typography variant="body2" color="text.secondary">
                                                 {e.email}
                                             </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Link to={`/admin/etudiants/${e.id}`}>{e.prenom}</Link>
                                         </TableCell>
                                         {!parcoursId && (
                                             <TableCell>

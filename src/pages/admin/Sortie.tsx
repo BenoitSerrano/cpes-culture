@@ -25,6 +25,7 @@ import { StatutAvecIcone } from '../../components/IconeStatut';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
 import { Infos, Lieu } from '../../components/Lieu';
+import { RendezVous } from '../../components/RendezVous';
 import { api } from '../../lib/api';
 import { getErrorMessage } from '../../lib/errors';
 import { formatDateHeure } from '../../lib/format';
@@ -70,12 +71,14 @@ function Sortie() {
     const triInscrits = useTri(
         sortie.data?.inscrits ?? [],
         {
-            etudiant: (i) => `${i.nom} ${i.prenom}`,
+            // Nom et prénom séparés : tri alphabétique par l'un ou par l'autre.
+            nom: (i) => `${i.nom} ${i.prenom}`,
+            prenom: (i) => `${i.prenom} ${i.nom}`,
             parcours: (i) => i.parcoursNom,
             // Pas encore pointés d'abord, puis absences, puis présents.
             presence: (i) => [null, 'absent_sans_justificatif', 'absent_avec_justificatif', 'present'].indexOf(i.statut),
         },
-        { cle: 'etudiant' },
+        { cle: 'nom' },
     );
 
     if (sortie.isPending) return <Chargement />;
@@ -108,6 +111,7 @@ function Sortie() {
                         ]}
                     </Infos>
                 </Typography>
+                <RendezVous texte={s.evenement.lieuRendezVous} />
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
@@ -179,7 +183,8 @@ function Sortie() {
                     <Table size="small">
                         <TableHead>
                             <TableRow>
-                                {triInscrits.enTete('etudiant', 'Étudiant')}
+                                {triInscrits.enTete('nom', 'Nom')}
+                                {triInscrits.enTete('prenom', 'Prénom')}
                                 {triInscrits.enTete('parcours', 'Parcours')}
                                 {triInscrits.enTete('presence', 'Présence')}
                                 <TableCell align="right" />
@@ -189,9 +194,10 @@ function Sortie() {
                             {triInscrits.lignes.map((inscrit) => (
                                 <TableRow key={inscrit.id}>
                                     <TableCell>
-                                        <Link to={`/admin/etudiants/${inscrit.id}`}>
-                                            {inscrit.prenom} {inscrit.nom}
-                                        </Link>
+                                        <Link to={`/admin/etudiants/${inscrit.id}`}>{inscrit.nom}</Link>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Link to={`/admin/etudiants/${inscrit.id}`}>{inscrit.prenom}</Link>
                                         {inscrit.boursier && <Chip label="Boursier" variant="outlined" sx={{ ml: 1 }} />}
                                     </TableCell>
                                     <TableCell>

@@ -67,6 +67,7 @@ type evenementDtoType = {
   institution: string | null;
   description: string | null;
   lieu: string | null;
+  lieuRendezVous: string | null;
   parcoursId: string | null;
 };
 type sortieDtoType = { debut: string; places: number };

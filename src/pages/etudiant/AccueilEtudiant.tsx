@@ -15,6 +15,7 @@ import { Chargement } from "../../components/Chargement";
 import { Confirmation } from "../../components/Confirmation";
 import { Erreur } from "../../components/Erreur";
 import { Infos, Lieu } from "../../components/Lieu";
+import { RendezVous } from "../../components/RendezVous";
 import { api } from "../../lib/api";
 import { tokenStorage } from "../../lib/storage";
 import { formatDateHeure } from "../../lib/format";
@@ -108,6 +109,7 @@ function AccueilEtudiant({ me }: { me: etudiantMeType }) {
                 </>
               )}
             </Typography>
+            <RendezVous texte={aConfirmer.evenement.lieuRendezVous} />
             <Alert severity="warning">
               Êtes-vous sûr ? Vous ne pourrez pas vous désinscrire vous-même, et
               une absence sans justificatif vous fermera les événements bonus et
@@ -163,6 +165,7 @@ function CarteEvenement(props: {
               </Infos>
             </Typography>
           )}
+          <RendezVous texte={evenement.lieuRendezVous} />
           {evenement.description && (
             <Typography sx={{ mt: 1, whiteSpace: "pre-line" }}>
               {evenement.description}

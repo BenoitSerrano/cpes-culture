@@ -48,6 +48,7 @@ type evenementEtudiantType = {
     institution: string | null;
     description: string | null;
     lieu: string | null;
+    lieuRendezVous: string | null;
     bonus: boolean;
     parcoursNom: string | null;
     parcoursCouleur: string | null;
@@ -59,6 +60,7 @@ type inscriptionEtudiantType = {
     sortieId: string;
     debut: string;
     lieu: string | null;
+    lieuRendezVous: string | null;
     evenementNom: string;
     institution: string | null;
     bonus: boolean;
@@ -87,6 +89,7 @@ type evenementType = {
     institution: string | null;
     description: string | null;
     lieu: string | null;
+    lieuRendezVous: string | null;
     parcoursId: string | null;
     dateOuverture: string | null;
     ouvertAutresParcoursLe: string | null;
