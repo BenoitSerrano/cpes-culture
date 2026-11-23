@@ -29,6 +29,26 @@ import { FormulaireEvenement } from "./formulaires";
 
 const ORDRE_ETATS: etatEvenementType[] = ["ouvert", "brouillon", "passe"];
 
+const CLE_VOIR_PASSES = "CPES_VOIR_EVENEMENTS_PASSES";
+
+// Stockage indisponible (navigation privée…) : on reste sur la valeur par défaut.
+function lireVoirPasses() {
+  try {
+    return localStorage.getItem(CLE_VOIR_PASSES) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function ecrireVoirPasses(valeur: boolean) {
+  try {
+    if (valeur) localStorage.setItem(CLE_VOIR_PASSES, "1");
+    else localStorage.removeItem(CLE_VOIR_PASSES);
+  } catch {
+    // Préférence non mémorisée : sans conséquence.
+  }
+}
+
 function Evenements() {
   const navigate = useNavigate();
   const evenements = useQuery({
@@ -36,6 +56,13 @@ function Evenements() {
     queryFn: api.getEvenements,
   });
   const [creation, setCreation] = useState(false);
+  // Évènements passés masqués par défaut ; le choix est gardé dans le navigateur.
+  const [voirPasses, setVoirPasses] = useState(lireVoirPasses);
+  const basculerPasses = () => {
+    setVoirPasses(!voirPasses);
+    ecrireVoirPasses(!voirPasses);
+  };
+  const nbPasses = (evenements.data ?? []).filter((e) => e.etat === "passe").length;
   const creer = useAction((dto: evenementDtoType) => api.createEvenement(dto), {
     succes: "Évènement créé. Ajoutez ses sorties avant de l’ouvrir.",
     onSuccess: (evenement) => navigate(`/admin/evenements/${evenement.id}`),
@@ -75,7 +102,7 @@ function Evenements() {
           Aucun évènement pour le moment.
         </Typography>
       )}
-      {ORDRE_ETATS.map((etat) => {
+      {ORDRE_ETATS.filter((etat) => etat !== "passe" || voirPasses).map((etat) => {
         const liste = (evenements.data ?? []).filter((e) => e.etat === etat);
         if (liste.length === 0) return null;
         return (
@@ -85,6 +112,20 @@ function Evenements() {
           </Stack>
         );
       })}
+
+      {nbPasses > 0 && (
+        <Box>
+          <Button
+            color="inherit"
+            sx={{ color: "text.secondary" }}
+            onClick={basculerPasses}
+          >
+            {voirPasses
+              ? "Masquer les évènements passés"
+              : `Voir les évènements passés (${nbPasses})`}
+          </Button>
+        </Box>
+      )}
 
       {creation && (
         <FormulaireEvenement
