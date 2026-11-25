@@ -187,6 +187,11 @@ const api = {
       `admin/sorties/${sortieId}/inscriptions/${etudiantId}${q(confirme)}`,
       "DELETE",
     ),
+  ajouterEnListeAttente: (sortieId: string, etudiantId: string) =>
+    call<{ position: number }>(
+      `admin/sorties/${sortieId}/liste-attente/${etudiantId}`,
+      "POST",
+    ),
   retirerDeListeAttente: (sortieId: string, etudiantId: string) =>
     call(`admin/sorties/${sortieId}/liste-attente/${etudiantId}`, "DELETE"),
   pointer: (

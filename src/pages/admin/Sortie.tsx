@@ -1,6 +1,5 @@
 import {
     Alert,
-    Autocomplete,
     Box,
     Button,
     Chip,
@@ -24,6 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BadgeParcours } from '../../components/BadgeParcours';
+import { ChampEtudiant } from '../../components/ChampEtudiant';
 import { Chargement } from '../../components/Chargement';
 import { StatutAvecIcone } from '../../components/IconeStatut';
 import { Confirmation } from '../../components/Confirmation';
@@ -41,7 +41,6 @@ import { useActionConfirmee } from '../../lib/useActionConfirmee';
 import type { sortieDetailType, statutPresenceType } from '../../types';
 
 type inscritType = sortieDetailType['inscrits'][number];
-type candidatType = sortieDetailType['candidats'][number];
 
 // Message ajouté quand la liste d'attente a avancé.
 const messagePromus = (promus: string[]) =>
@@ -57,7 +56,6 @@ function Sortie() {
     const { sortieId = '' } = useParams();
     const notify = useNotify();
     const sortie = useQuery({ queryKey: ['admin', 'sortie', sortieId], queryFn: () => api.getSortie(sortieId) });
-    const [candidat, setCandidat] = useState<candidatType | null>(null);
     const [aDesinscrire, setADesinscrire] = useState<inscritType>();
 
     const pointer = useActionConfirmee(
@@ -68,10 +66,12 @@ function Sortie() {
                 nbAnnulations > 0 ? `Pointage enregistré.${messageAnnulations(nbAnnulations)}` : undefined,
         },
     );
-    const [listeOuverte, setListeOuverte] = useState(false);
     const inscrire = useAction((etudiantId: string) => api.inscrire(sortieId, etudiantId), {
         succes: 'Étudiant inscrit.',
-        onSuccess: () => setCandidat(null),
+    });
+    const mettreEnAttente = useAction((etudiantId: string) => api.ajouterEnListeAttente(sortieId, etudiantId), {
+        succes: ({ position }) =>
+            `Étudiant ajouté à la liste d'attente (${position === 1 ? '1ʳᵉ' : `${position}ᵉ`} place).`,
     });
     const desinscrire = useActionConfirmee(
         (etudiantId: string, confirme) => api.desinscrire(sortieId, etudiantId, confirme),
@@ -112,9 +112,6 @@ function Sortie() {
     if (sortie.isPending) return <Chargement />;
     if (sortie.isError) return <Erreur error={sortie.error} />;
     const s = sortie.data;
-    const candidatsTries = [...s.candidats].sort(
-        (a, b) => Number(!!a.raison) - Number(!!b.raison) || a.nom.localeCompare(b.nom, 'fr'),
-    );
 
     return (
         <Stack spacing={3}>
@@ -157,59 +154,13 @@ function Sortie() {
                     </span>
                 </Tooltip>
             </Box>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <Autocomplete
-                    sx={{ flexGrow: 1 }}
-                    options={candidatsTries}
-                    value={candidat}
-                    // Entrée inscrit directement l'étudiant surligné ; un clic le sélectionne
-                    // seulement (le bouton « Inscrire » confirme).
-                    autoHighlight
-                    open={listeOuverte}
-                    onOpen={() => setListeOuverte(true)}
-                    onClose={() => setListeOuverte(false)}
-                    onChange={(event, valeur) => {
-                        setCandidat(valeur);
-                        if (event.type === 'keydown' && valeur && !valeur.raison && !inscrire.isPending) {
-                            inscrire.mutate(valeur.id);
-                        }
-                    }}
-                    onKeyDown={(event) => {
-                        // Liste fermée et étudiant déjà sélectionné : Entrée l'inscrit aussi.
-                        if (event.key === 'Enter' && !listeOuverte && candidat && !inscrire.isPending) {
-                            event.preventDefault();
-                            inscrire.mutate(candidat.id);
-                        }
-                    }}
-                    getOptionLabel={(c) => `${c.prenom} ${c.nom} (${c.parcoursNom})`}
-                    getOptionDisabled={(c) => !!c.raison}
-                    renderOption={(props, c) => (
-                        <li {...props} key={c.id}>
-                            <Box>
-                                <Typography>
-                                    {c.prenom} {c.nom}{' '}
-                                    <Typography component="span" color="text.secondary" variant="body2">
-                                        {c.parcoursNom} · {c.email}
-                                    </Typography>
-                                </Typography>
-                                {c.raisonMessage && (
-                                    <Typography variant="caption" color="text.secondary">
-                                        {c.raisonMessage}
-                                    </Typography>
-                                )}
-                            </Box>
-                        </li>
-                    )}
-                    renderInput={(params) => <TextField {...params} label="Inscrire un étudiant" />}
-                />
-                <Button
-                    variant="contained"
-                    disabled={!candidat || inscrire.isPending}
-                    onClick={() => candidat && inscrire.mutate(candidat.id)}
-                >
-                    Inscrire
-                </Button>
-            </Stack>
+            <ChampEtudiant
+                candidats={s.candidats}
+                libelle="Inscrire un étudiant"
+                bouton="Inscrire"
+                enCours={inscrire.isPending}
+                onValider={(id, onSuccess) => inscrire.mutate(id, { onSuccess })}
+            />
             {!s.pointable && s.inscrits.length > 0 && (
                 <Alert severity="info">Le pointage sera possible à partir du jour de la sortie.</Alert>
             )}
@@ -296,6 +247,20 @@ function Sortie() {
             {s.evenement.bonus && (
                 <Stack spacing={1}>
                     <Typography variant="h2">Liste d'attente</Typography>
+                    {s.inscrits.length >= s.places ? (
+                        <ChampEtudiant
+                            candidats={s.candidatsAttente}
+                            libelle="Ajouter à la liste d'attente"
+                            bouton="Ajouter"
+                            discret
+                            enCours={mettreEnAttente.isPending}
+                            onValider={(id, onSuccess) => mettreEnAttente.mutate(id, { onSuccess })}
+                        />
+                    ) : (
+                        <Typography variant="body2" color="text.secondary">
+                            Il reste des places : on ne peut ajouter personne à la liste d'attente.
+                        </Typography>
+                    )}
                     {s.listeAttente.length === 0 ? (
                         <Typography color="text.secondary">Personne en attente.</Typography>
                     ) : (

@@ -177,6 +177,16 @@ type evenementDetailType = evenementType & {
     } | null;
 };
 
+// Étudiant proposé au prof ; raisonMessage = pourquoi il ne peut pas être choisi.
+type candidatType = {
+    id: string;
+    nom: string;
+    prenom: string;
+    email: string;
+    parcoursNom: string;
+    raisonMessage: string | null;
+};
+
 type sortieDetailType = sortieType & {
     evenement: evenementType & { bonus: boolean; parcoursNom: string | null; parcoursCouleur: string | null };
     pointable: boolean;
@@ -185,15 +195,9 @@ type sortieDetailType = sortieType & {
         parcoursCouleur: string | null;
         statut: statutPresenceType | null;
     })[];
-    candidats: {
-        id: string;
-        nom: string;
-        prenom: string;
-        email: string;
-        parcoursNom: string;
-        raison: raisonRefusType | null;
-        raisonMessage: string | null;
-    }[];
+    candidats: candidatType[];
+    // Vide si la sortie n'est pas une sortie bonus complète.
+    candidatsAttente: candidatType[];
     listeAttente: {
         id: string;
         nom: string;
@@ -279,6 +283,7 @@ export type {
     sortieType,
     evenementDetailType,
     sortieDetailType,
+    candidatType,
     attenteEtudiantType,
     sortieAPointerType,
     apercuImportType,
