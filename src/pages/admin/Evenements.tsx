@@ -29,26 +29,6 @@ import { FormulaireEvenement } from "./formulaires";
 
 const ORDRE_ETATS: etatEvenementType[] = ["ouvert", "brouillon", "passe"];
 
-const CLE_VOIR_PASSES = "CPES_VOIR_EVENEMENTS_PASSES";
-
-// Stockage indisponible (navigation privée…) : on reste sur la valeur par défaut.
-function lireVoirPasses() {
-  try {
-    return localStorage.getItem(CLE_VOIR_PASSES) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function ecrireVoirPasses(valeur: boolean) {
-  try {
-    if (valeur) localStorage.setItem(CLE_VOIR_PASSES, "1");
-    else localStorage.removeItem(CLE_VOIR_PASSES);
-  } catch {
-    // Préférence non mémorisée : sans conséquence.
-  }
-}
-
 function Evenements() {
   const navigate = useNavigate();
   const evenements = useQuery({
@@ -56,12 +36,8 @@ function Evenements() {
     queryFn: api.getEvenements,
   });
   const [creation, setCreation] = useState(false);
-  // Évènements passés masqués par défaut ; le choix est gardé dans le navigateur.
-  const [voirPasses, setVoirPasses] = useState(lireVoirPasses);
-  const basculerPasses = () => {
-    setVoirPasses(!voirPasses);
-    ecrireVoirPasses(!voirPasses);
-  };
+  // Évènements passés toujours masqués à l'arrivée sur la page.
+  const [voirPasses, setVoirPasses] = useState(false);
   const nbPasses = (evenements.data ?? []).filter((e) => e.etat === "passe").length;
   const creer = useAction((dto: evenementDtoType) => api.createEvenement(dto), {
     succes: "Évènement créé. Ajoutez ses sorties avant de l’ouvrir.",
@@ -118,7 +94,7 @@ function Evenements() {
           <Button
             color="inherit"
             sx={{ color: "text.secondary" }}
-            onClick={basculerPasses}
+            onClick={() => setVoirPasses(!voirPasses)}
           >
             {voirPasses
               ? "Masquer les évènements passés"

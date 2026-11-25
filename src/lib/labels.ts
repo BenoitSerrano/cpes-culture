@@ -12,7 +12,7 @@ function labelStatut(statut: statutPresenceType | null) {
 
 const ETATS: Record<etatEvenementType, string> = {
     brouillon: 'Non ouvert',
-    ouvert: 'Ouvert',
+    ouvert: 'À venir',
     passe: 'Passé',
 };
 
