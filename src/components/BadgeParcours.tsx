@@ -1,4 +1,4 @@
-import { Chip, SxProps, Theme } from '@mui/material';
+import { Chip, Stack, SxProps, Theme } from '@mui/material';
 
 // Texte noir ou blanc selon la luminance de la couleur, pour rester lisible.
 function couleurTexte(hex: string) {
@@ -37,4 +37,24 @@ function BadgeBonus({ sx }: { sx?: SxProps<Theme> }) {
     );
 }
 
-export { BadgeParcours, BadgeBonus };
+// Type d'un évènement vu par un étudiant : Bonus, ou Parcours (avec « Hors parcours » si besoin).
+function BadgeEvenement({
+    evenement,
+}: {
+    evenement: {
+        bonus: boolean;
+        horsParcours: boolean;
+        parcoursNom: string | null;
+        parcoursCouleur: string | null;
+    };
+}) {
+    if (evenement.bonus) return <BadgeBonus />;
+    return (
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <BadgeParcours nom={evenement.parcoursNom} couleur={evenement.parcoursCouleur} prefixe />
+            {evenement.horsParcours && <Chip label="Hors parcours" variant="outlined" />}
+        </Stack>
+    );
+}
+
+export { BadgeParcours, BadgeBonus, BadgeEvenement };

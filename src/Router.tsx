@@ -6,8 +6,7 @@ import { Layout } from "./components/Layout";
 import { api } from "./lib/api";
 import { tokenStorage } from "./lib/storage";
 import { Connexion } from "./pages/Connexion";
-import { AccueilEtudiant } from "./pages/etudiant/AccueilEtudiant";
-import { MesInscriptions } from "./pages/etudiant/MesInscriptions";
+import { Sorties } from "./pages/etudiant/Sorties";
 import { AccueilAdmin } from "./pages/admin/AccueilAdmin";
 import { Evenements } from "./pages/admin/Evenements";
 import { Evenement } from "./pages/admin/Evenement";
@@ -15,11 +14,6 @@ import { Sortie } from "./pages/admin/Sortie";
 import { Etudiants } from "./pages/admin/Etudiants";
 import { Etudiant } from "./pages/admin/Etudiant";
 import { Parcours } from "./pages/admin/Parcours";
-
-const LIENS_ETUDIANT = [
-  { to: "/", label: "Événements" },
-  { to: "/inscriptions", label: "Mes inscriptions" },
-];
 
 const LIENS_ADMIN = [
   { to: "/admin", label: "Accueil" },
@@ -67,7 +61,7 @@ function Router() {
 
   return (
     <Layout
-      liens={LIENS_ETUDIANT}
+      liens={[]}
       impersonation={
         tokenStorage.estEnImpersonation()
           ? `${me.data.etudiant.prenom} ${me.data.etudiant.nom}`
@@ -75,8 +69,7 @@ function Router() {
       }
     >
       <Routes>
-        <Route path="/" element={<AccueilEtudiant me={me.data} />} />
-        <Route path="/inscriptions" element={<MesInscriptions />} />
+        <Route path="/" element={<Sorties me={me.data} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

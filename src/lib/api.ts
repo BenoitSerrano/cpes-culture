@@ -1,8 +1,6 @@
 import { ApiError } from "./errors";
 import { tokenStorage } from "./storage";
 import type {
-  annulationType,
-  attenteEtudiantType,
   apercuImportType,
   etudiantAdminType,
   etudiantDtoType,
@@ -10,11 +8,10 @@ import type {
   etudiantType,
   evenementAdminType,
   evenementDetailType,
-  evenementEtudiantType,
   evenementType,
   ficheEtudiantType,
-  inscriptionEtudiantType,
   meType,
+  pageSortiesType,
   parcoursType,
   recapitulatifParcoursType,
   sortieAPointerType,
@@ -95,14 +92,7 @@ const api = {
   getMe: () => call<meType>("me"),
 
   // Espace étudiant
-  getMesEvenements: () => call<evenementEtudiantType[]>("moi/evenements"),
-  getMesInscriptions: () =>
-    call<{
-      aVenir: inscriptionEtudiantType[];
-      historique: inscriptionEtudiantType[];
-      listeAttente: attenteEtudiantType[];
-      annulations: annulationType[];
-    }>("moi/inscriptions"),
+  getMesSorties: () => call<pageSortiesType>("moi/sorties"),
   sInscrire: (sortieId: string) =>
     call<{ ok: true }>(`moi/sorties/${sortieId}/inscription`, "POST"),
   rejoindreListeAttente: (sortieId: string) =>

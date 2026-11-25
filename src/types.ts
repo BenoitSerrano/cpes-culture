@@ -87,18 +87,39 @@ type sortieEtudiantType = {
     } | null;
 };
 
-type evenementEtudiantType = {
+type typeEvenementType = {
     id: string;
     nom: string;
+    bonus: boolean;
+    horsParcours: boolean;
+    parcoursNom: string | null;
+    parcoursCouleur: string | null;
+};
+
+// Carte d'un évènement à venir ; `sorties` : seulement les dates à afficher.
+type evenementEtudiantType = typeEvenementType & {
     institution: string | null;
     description: string | null;
     lieu: string | null;
     lieuRendezVous: string | null;
-    bonus: boolean;
-    parcoursNom: string | null;
-    parcoursCouleur: string | null;
-    horsParcours: boolean;
-    sorties: sortieEtudiantType[];
+    engagement: 'inscrit' | 'en_attente' | 'annule' | null;
+    obligatoire: boolean;
+    limiteInscription: string | null;
+    sorties: (sortieEtudiantType & { annulation: 'inscription' | 'attente' | null })[];
+};
+
+type sortiePasseeType = typeEvenementType & {
+    debut: string;
+    inscrit: boolean;
+    statut: statutPresenceType | null;
+    // Présente si c'est une faute (absence injustifiée ou non-inscription).
+    faute: Pick<fauteType, 'compenseePar'> | null;
+};
+
+type pageSortiesType = {
+    mesSorties: evenementEtudiantType[];
+    autresSorties: evenementEtudiantType[];
+    passees: sortiePasseeType[];
 };
 
 type inscriptionEtudiantType = {
@@ -212,18 +233,6 @@ type sortieDetailType = sortieType & {
     }[];
 };
 
-type attenteEtudiantType = {
-    sortieId: string;
-    debut: string;
-    lieu: string | null;
-    lieuRendezVous: string | null;
-    evenementNom: string;
-    institution: string | null;
-    bonus: boolean;
-    position: number;
-    nbEnAttente: number;
-};
-
 type sortieAPointerType = {
     id: string;
     debut: string;
@@ -273,6 +282,8 @@ export type {
     meType,
     sortieEtudiantType,
     evenementEtudiantType,
+    sortiePasseeType,
+    pageSortiesType,
     inscriptionEtudiantType,
     parcoursType,
     etudiantAdminType,
@@ -284,7 +295,6 @@ export type {
     evenementDetailType,
     sortieDetailType,
     candidatType,
-    attenteEtudiantType,
     sortieAPointerType,
     apercuImportType,
     statutRecapitulatifType,

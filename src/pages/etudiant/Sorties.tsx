@@ -16,16 +16,18 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { BadgeBonus, BadgeParcours } from "../../components/BadgeParcours";
+import { BadgeEvenement, BadgeParcours } from "../../components/BadgeParcours";
 import { Chargement } from "../../components/Chargement";
 import { Confirmation } from "../../components/Confirmation";
+import { DescriptionRepliable } from "../../components/DescriptionRepliable";
 import { Erreur } from "../../components/Erreur";
 import { Infos, Lieu } from "../../components/Lieu";
 import { AlerteBonusBloque } from "../../components/SituationBonus";
 import { RendezVous } from "../../components/RendezVous";
+import { SortiesPassees } from "../../components/SortiesPassees";
 import { api } from "../../lib/api";
 import { tokenStorage } from "../../lib/storage";
-import { formatDateHeure } from "../../lib/format";
+import { formatDateCourte, formatDateHeure } from "../../lib/format";
 import { useAction } from "../../lib/useAction";
 import type {
   evenementEtudiantType,
@@ -50,10 +52,10 @@ function ordinal(n: number) {
   return n === 1 ? "1ʳᵉ" : `${n}ᵉ`;
 }
 
-function AccueilEtudiant({ me }: { me: etudiantMeType }) {
-  const evenements = useQuery({
-    queryKey: ["moi", "evenements"],
-    queryFn: api.getMesEvenements,
+function Sorties({ me }: { me: etudiantMeType }) {
+  const sorties = useQuery({
+    queryKey: ["moi", "sorties"],
+    queryFn: api.getMesSorties,
     refetchInterval: RAFRAICHISSEMENT_MS,
   });
   const [cible, setCible] = useState<cibleType>();
@@ -66,17 +68,42 @@ function AccueilEtudiant({ me }: { me: etudiantMeType }) {
     },
   );
 
+  const groupe = (
+    titre: string,
+    vide: string,
+    evenements: evenementEtudiantType[],
+  ) => (
+    <Stack spacing={2}>
+      <Typography variant="h3">{titre}</Typography>
+      {evenements.length === 0 && (
+        <Typography color="text.secondary">{vide}</Typography>
+      )}
+      {evenements.map((evenement) => (
+        <CarteEvenement
+          key={evenement.id}
+          evenement={evenement}
+          compense={evenement.horsParcours && me.etudiant.bonus.bloque}
+          onAction={(sortie, mode) => setCible({ evenement, sortie, mode })}
+          onQuitter={(sortie) =>
+            setAQuitter({ evenement, sortie, mode: "attente" })
+          }
+        />
+      ))}
+    </Stack>
+  );
+
   return (
     <Stack spacing={3}>
       <Box>
-        <Typography variant="h1">Bonjour {me.etudiant.prenom}</Typography>
-        <Box sx={{ mt: 0.5 }}>
+        <Typography variant="h1">Sorties</Typography>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+          <Typography color="text.secondary">{me.etudiant.prenom}</Typography>
           <BadgeParcours
             nom={me.etudiant.parcoursNom}
             couleur={me.etudiant.parcoursCouleur}
             prefixe
           />
-        </Box>
+        </Stack>
       </Box>
 
       {me.etudiant.cotisationPayeeLe === null && (
@@ -88,25 +115,24 @@ function AccueilEtudiant({ me }: { me: etudiantMeType }) {
       )}
       <AlerteBonusBloque bonus={me.etudiant.bonus} />
 
-      <Typography variant="h2">Événements ouverts</Typography>
-      {evenements.isPending && <Chargement />}
-      {evenements.isError && <Erreur error={evenements.error} />}
-      {evenements.data?.length === 0 && (
-        <Typography color="text.secondary">
-          Aucun évènement ouvert pour le moment.
-        </Typography>
+      {sorties.isPending && <Chargement />}
+      {sorties.isError && <Erreur error={sorties.error} />}
+      {sorties.data && (
+        <>
+          <Typography variant="h2">À venir</Typography>
+          {groupe(
+            "Mes sorties",
+            "Vous n'êtes inscrit à aucune sortie à venir.",
+            sorties.data.mesSorties,
+          )}
+          {groupe(
+            "Autres sorties",
+            "Aucune autre sortie pour le moment.",
+            sorties.data.autresSorties,
+          )}
+          <SortiesPassees lignes={sorties.data.passees} />
+        </>
       )}
-      {evenements.data?.map((evenement) => (
-        <CarteEvenement
-          key={evenement.id}
-          evenement={evenement}
-          compense={evenement.horsParcours && me.etudiant.bonus.bloque}
-          onAction={(sortie, mode) => setCible({ evenement, sortie, mode })}
-          onQuitter={(sortie) =>
-            setAQuitter({ evenement, sortie, mode: "attente" })
-          }
-        />
-      ))}
 
       {cible && (
         <DialogInscription
@@ -187,7 +213,7 @@ function DialogInscription(props: { cible: cibleType; onFermer: () => void }) {
             {mode === "attente" && (
               <Typography variant="body2" color="text.secondary">
                 Si une place se libère, vous serez inscrit automatiquement. Suivez
-                votre position dans « Mes inscriptions ».
+                votre position dans « Mes sorties ».
               </Typography>
             )}
           </Stack>
@@ -250,34 +276,38 @@ function CarteEvenement(props: {
   onQuitter: (sortie: sortieEtudiantType) => void;
 }) {
   const { evenement } = props;
+  const annule = evenement.engagement === "annule";
+  const engage =
+    evenement.engagement === "inscrit" || evenement.engagement === "en_attente";
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper sx={{ p: 3, ...(annule && { bgcolor: "#f4f4f5" }) }}>
       <Stack spacing={2}>
-        <Box>
+        <Box sx={{ opacity: annule ? 0.6 : 1 }}>
           <Stack
             direction="row"
             spacing={1}
             sx={{ mb: 1 }}
+            alignItems="center"
             flexWrap="wrap"
             useFlexGap
           >
-            {evenement.bonus ? (
-              <BadgeBonus />
-            ) : (
-              <BadgeParcours
-                nom={evenement.parcoursNom}
-                couleur={evenement.parcoursCouleur}
-                prefixe
-              />
+            <BadgeEvenement evenement={evenement} />
+            {evenement.obligatoire && (
+              <Chip label="Obligatoire" color="warning" />
             )}
-            {evenement.horsParcours && (
-              <Chip label="Ouvert aux autres parcours" />
+            {evenement.limiteInscription && (
+              <Typography variant="body2" color="warning.dark">
+                Inscription avant le{" "}
+                {formatDateCourte(evenement.limiteInscription)}
+              </Typography>
             )}
             {props.compense && (
               <Chip label="Compte comme compensation" color="success" />
             )}
           </Stack>
-          <Typography variant="h2">{evenement.nom}</Typography>
+          <Typography variant="h2" component="h4">
+            {evenement.nom}
+          </Typography>
           {(evenement.institution || evenement.lieu) && (
             <Typography color="text.secondary">
               <Infos>
@@ -288,12 +318,11 @@ function CarteEvenement(props: {
               </Infos>
             </Typography>
           )}
-          <RendezVous texte={evenement.lieuRendezVous} />
-          {evenement.description && (
-            <Typography sx={{ mt: 1, whiteSpace: "pre-line" }}>
-              {evenement.description}
-            </Typography>
-          )}
+          {engage && <RendezVous texte={evenement.lieuRendezVous} />}
+          <DescriptionRepliable
+            texte={evenement.description}
+            lignes={evenement.engagement ? 0 : 2}
+          />
         </Box>
         <Divider />
         <Stack divider={<Divider flexItem />} spacing={1.5}>
@@ -325,7 +354,7 @@ function Precision({ children }: { children: string }) {
 }
 
 function LigneSortie(props: {
-  sortie: sortieEtudiantType;
+  sortie: evenementEtudiantType["sorties"][number];
   onAction: (mode: cibleType["mode"]) => void;
   onQuitter: () => void;
 }) {
@@ -336,7 +365,16 @@ function LigneSortie(props: {
     !sortie.inscrit && sortie.raison === "complet" && attente !== null;
 
   let action;
-  if (sortie.inscrit) {
+  if (sortie.annulation) {
+    action = (
+      <Typography variant="body2" color="error.main">
+        {sortie.annulation === "inscription"
+          ? "Annulée"
+          : "Retiré de la liste d'attente"}{" "}
+        : accès aux bonus bloqué
+      </Typography>
+    );
+  } else if (sortie.inscrit) {
     action = <Chip label="Inscrit" color="success" />;
   } else if (attente?.position) {
     action = (
@@ -410,13 +448,15 @@ function LigneSortie(props: {
         <Typography sx={{ "&::first-letter": { textTransform: "uppercase" } }}>
           {formatDateHeure(sortie.debut)}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {`${sortie.placesRestantes} place(s) restante(s) sur ${sortie.places}`}
-        </Typography>
+        {!sortie.inscrit && !sortie.annulation && (
+          <Typography variant="body2" color="text.secondary">
+            {`${sortie.placesRestantes} place(s) restante(s) sur ${sortie.places}`}
+          </Typography>
+        )}
       </Box>
       {action}
     </Box>
   );
 }
 
-export { AccueilEtudiant };
+export { Sorties };
