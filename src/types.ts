@@ -3,7 +3,7 @@ type raisonRefusType =
     | 'cotisation'
     | 'non_ouvert'
     | 'reserve_parcours'
-    | 'absence'
+    | 'bonus_bloque'
     | 'complet'
     | 'deja_inscrit'
     | 'closes';
@@ -15,10 +15,47 @@ type etudiantType = {
     email: string;
     parcoursId: string;
     boursier: boolean;
-    cotisationPayee: boolean;
+    // Jour du paiement (AAAA-MM-JJ), null = non payée.
+    cotisationPayeeLe: string | null;
+    createdAt: string;
 };
 
-type etudiantDtoType = Omit<etudiantType, 'id'>;
+type etudiantDtoType = Omit<etudiantType, 'id' | 'createdAt'>;
+// Parcours et statut boursier sont figés à la création ; une date de paiement ne s'efface pas.
+type etudiantUpdateDtoType = Partial<Pick<etudiantType, 'nom' | 'prenom' | 'email'>> & {
+    cotisationPayeeLe?: string;
+};
+
+// Faute qui bloque les bonus : absence injustifiée (abi) ou non-inscription (ni).
+type fauteType = {
+    type: 'abi' | 'ni';
+    date: string;
+    evenementId: string;
+    evenementNom: string;
+    sortieId: string | null;
+    compenseePar: { sortieId: string; evenementNom: string; debut: string } | null;
+};
+type situationType = { bloque: boolean; nbRestantes: number; fautes: fauteType[] };
+
+// Bonus qu'une action du prof ferait perdre.
+type perteType = {
+    etudiantId: string;
+    etudiantNom: string;
+    sortieId: string;
+    evenementNom: string;
+    debut: string;
+    type: 'inscription' | 'attente';
+};
+
+// Bonus déjà perdu à cause du blocage.
+type annulationType = {
+    sortieId: string;
+    debut: string;
+    evenementNom: string;
+    institution: string | null;
+    type: 'inscription' | 'attente';
+    annuleeLe: string;
+};
 
 type meType =
     | { role: 'admin'; email: string }
@@ -28,7 +65,8 @@ type meType =
           etudiant: etudiantType & {
               parcoursNom: string;
               parcoursCouleur: string | null;
-              aAbsenceSansJustificatif: boolean;
+              // Seulement les fautes non compensées.
+              bonus: situationType;
           };
       };
 
@@ -84,9 +122,12 @@ type compteursType = {
     nbNonInscrit: number;
 };
 
-type etudiantAdminType = etudiantType & compteursType & { parcoursNom: string; parcoursCouleur: string | null };
+type etudiantAdminType = etudiantType &
+    compteursType & { parcoursNom: string; parcoursCouleur: string | null; bonusBloque: boolean };
 
 type ficheEtudiantType = etudiantAdminType & {
+    situation: situationType;
+    annulations: annulationType[];
     inscriptions: (inscriptionEtudiantType & { evenementId: string })[];
 };
 
@@ -191,14 +232,24 @@ type sortieAPointerType = {
 
 type ligneImportType = etudiantDtoType & { ligne: number; parcoursNom: string };
 
-type statutRecapitulatifType = 'non_inscrit' | 'non_pointe' | 'abj' | 'abi' | 'ok';
+// pas_inscrit : encore temps ; ni : faute ; ni_exempte : pas une faute (detail = raison).
+type statutRecapitulatifType =
+    | 'pas_inscrit'
+    | 'ni'
+    | 'ni_exempte'
+    | 'non_pointe'
+    | 'abj'
+    | 'abi'
+    | 'ok';
+type celluleRecapitulatifType = { statut: statutRecapitulatifType; detail: string | null };
 
 type recapitulatifParcoursType = {
     evenements: { id: string; nom: string; slug: string; premierDebut: string | null }[];
-    cellules: Record<string, Record<string, statutRecapitulatifType>>;
+    cellules: Record<string, Record<string, celluleRecapitulatifType>>;
 };
 
 type apercuImportType = {
+    pertes: perteType[];
     aCreer: ligneImportType[];
     aMettreAJour: ligneImportType[];
     erreurs: { ligne: number; message: string }[];
@@ -209,6 +260,12 @@ export type {
     raisonRefusType,
     etudiantType,
     etudiantDtoType,
+    etudiantUpdateDtoType,
+    fauteType,
+    situationType,
+    perteType,
+    annulationType,
+    celluleRecapitulatifType,
     meType,
     sortieEtudiantType,
     evenementEtudiantType,

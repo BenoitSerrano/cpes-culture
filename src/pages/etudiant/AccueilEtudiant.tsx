@@ -21,6 +21,7 @@ import { Chargement } from "../../components/Chargement";
 import { Confirmation } from "../../components/Confirmation";
 import { Erreur } from "../../components/Erreur";
 import { Infos, Lieu } from "../../components/Lieu";
+import { AlerteBonusBloque } from "../../components/SituationBonus";
 import { RendezVous } from "../../components/RendezVous";
 import { api } from "../../lib/api";
 import { tokenStorage } from "../../lib/storage";
@@ -78,20 +79,14 @@ function AccueilEtudiant({ me }: { me: etudiantMeType }) {
         </Box>
       </Box>
 
-      {!me.etudiant.cotisationPayee && (
+      {me.etudiant.cotisationPayeeLe === null && (
         <Alert severity="warning">
           Votre cotisation n'est pas enregistrée comme payée : vous ne pouvez
           pas encore vous inscrire aux sorties. Le message disparaîtra dès que
           le professeur aura mis à jour votre statut.
         </Alert>
       )}
-      {me.etudiant.aAbsenceSansJustificatif && (
-        <Alert severity="info">
-          Vous avez une absence sans justificatif : les événements bonus et ceux
-          des autres parcours vous sont fermés. Les événements de votre parcours
-          restent accessibles.
-        </Alert>
-      )}
+      <AlerteBonusBloque bonus={me.etudiant.bonus} />
 
       <Typography variant="h2">Événements ouverts</Typography>
       {evenements.isPending && <Chargement />}
@@ -105,6 +100,7 @@ function AccueilEtudiant({ me }: { me: etudiantMeType }) {
         <CarteEvenement
           key={evenement.id}
           evenement={evenement}
+          compense={evenement.horsParcours && me.etudiant.bonus.bloque}
           onAction={(sortie, mode) => setCible({ evenement, sortie, mode })}
           onQuitter={(sortie) =>
             setAQuitter({ evenement, sortie, mode: "attente" })
@@ -217,9 +213,9 @@ function DialogInscription(props: { cible: cibleType; onFermer: () => void }) {
           {details}
           {mode === "inscription" ? (
             <Alert severity="warning">
-              Êtes-vous sûr ? Vous ne pourrez pas vous désinscrire vous-même, et
-              une absence sans justificatif vous fermera les événements bonus et
-              hors parcours.
+              Êtes-vous sûr ? Vous ne pourrez pas vous désinscrire vous-même. Une
+              absence sans justificatif vous fermera les événements bonus, et
+              ceux que vous avez déjà réservés seront perdus.
             </Alert>
           ) : (
             <Alert severity="info">
@@ -248,6 +244,8 @@ function DialogInscription(props: { cible: cibleType; onFermer: () => void }) {
 
 function CarteEvenement(props: {
   evenement: evenementEtudiantType;
+  // Une présence à cette sortie hors parcours débloquerait (en partie) les bonus.
+  compense: boolean;
   onAction: (sortie: sortieEtudiantType, mode: cibleType["mode"]) => void;
   onQuitter: (sortie: sortieEtudiantType) => void;
 }) {
@@ -274,6 +272,9 @@ function CarteEvenement(props: {
             )}
             {evenement.horsParcours && (
               <Chip label="Ouvert aux autres parcours" />
+            )}
+            {props.compense && (
+              <Chip label="Compte comme compensation" color="success" />
             )}
           </Stack>
           <Typography variant="h2">{evenement.nom}</Typography>

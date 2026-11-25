@@ -1,5 +1,4 @@
 import {
-    Alert,
     Autocomplete,
     Button,
     Dialog,
@@ -15,9 +14,9 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { FormEvent, ReactNode, useState } from 'react';
 import { api, evenementDtoType, sortieDtoType } from '../../lib/api';
-import { isoVersSaisie, saisieVersIso } from '../../lib/format';
+import { getAujourdhui, isoVersSaisie, saisieVersIso } from '../../lib/format';
 import { estLienGoogleMaps } from '../../lib/lieu';
-import type { etudiantDtoType } from '../../types';
+import type { etudiantDtoType, etudiantType, etudiantUpdateDtoType } from '../../types';
 
 function FormulaireDialog(props: {
     ouvert: boolean;
@@ -211,33 +210,28 @@ function FormulaireSortie(props: {
     );
 }
 
-function FormulaireEtudiant(props: {
-    titre: string;
-    initial?: etudiantDtoType;
-    enCours: boolean;
-    onFermer: () => void;
-    onValider: (dto: etudiantDtoType) => void;
+function ChampDatePaiement(props: {
+    valeur: string | null;
+    requis?: boolean;
+    onChange: (valeur: string | null) => void;
 }) {
-    const parcours = useParcoursOptions();
-    const [dto, setDto] = useState<etudiantDtoType>(
-        props.initial ?? {
-            nom: '',
-            prenom: '',
-            email: '',
-            parcoursId: '',
-            boursier: false,
-            cotisationPayee: false,
-        },
-    );
-
     return (
-        <FormulaireDialog
-            ouvert
-            titre={props.titre}
-            enCours={props.enCours}
-            onFermer={props.onFermer}
-            onValider={() => props.onValider(dto)}
-        >
+        <TextField
+            label={props.requis ? 'Cotisation payée le' : 'Cotisation payée le (vide si non payée)'}
+            type="date"
+            required={props.requis}
+            value={props.valeur ?? ''}
+            onChange={(e) => props.onChange(e.target.value || null)}
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: getAujourdhui() } }}
+        />
+    );
+}
+
+type identiteType = Pick<etudiantDtoType, 'nom' | 'prenom' | 'email'>;
+
+function ChampsIdentite<T extends identiteType>({ dto, onChange }: { dto: T; onChange: (dto: T) => void }) {
+    return (
+        <>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                     label="Prénom"
@@ -245,14 +239,14 @@ function FormulaireEtudiant(props: {
                     fullWidth
                     autoFocus
                     value={dto.prenom}
-                    onChange={(e) => setDto({ ...dto, prenom: e.target.value })}
+                    onChange={(e) => onChange({ ...dto, prenom: e.target.value })}
                 />
                 <TextField
                     label="Nom"
                     required
                     fullWidth
                     value={dto.nom}
-                    onChange={(e) => setDto({ ...dto, nom: e.target.value })}
+                    onChange={(e) => onChange({ ...dto, nom: e.target.value })}
                 />
             </Stack>
             <TextField
@@ -260,13 +254,42 @@ function FormulaireEtudiant(props: {
                 type="email"
                 required
                 value={dto.email}
-                onChange={(e) => setDto({ ...dto, email: e.target.value })}
+                onChange={(e) => onChange({ ...dto, email: e.target.value })}
             />
+        </>
+    );
+}
+
+function FormulaireCreationEtudiant(props: {
+    enCours: boolean;
+    onFermer: () => void;
+    onValider: (dto: etudiantDtoType) => void;
+}) {
+    const parcours = useParcoursOptions();
+    const [dto, setDto] = useState<etudiantDtoType>({
+        nom: '',
+        prenom: '',
+        email: '',
+        parcoursId: '',
+        boursier: false,
+        cotisationPayeeLe: null,
+    });
+
+    return (
+        <FormulaireDialog
+            ouvert
+            titre="Ajouter un étudiant"
+            enCours={props.enCours}
+            onFermer={props.onFermer}
+            onValider={() => props.onValider(dto)}
+        >
+            <ChampsIdentite dto={dto} onChange={setDto} />
             <TextField
                 label="Parcours"
                 select
                 required
                 value={dto.parcoursId}
+                helperText="Non modifiable ensuite."
                 onChange={(e) => setDto({ ...dto, parcoursId: e.target.value })}
             >
                 {parcours.map((p) => (
@@ -279,25 +302,48 @@ function FormulaireEtudiant(props: {
                 control={
                     <Switch checked={dto.boursier} onChange={(e) => setDto({ ...dto, boursier: e.target.checked })} />
                 }
-                label="Boursier"
+                label="Boursier (non modifiable ensuite)"
             />
-            <FormControlLabel
-                control={
-                    <Switch
-                        checked={dto.cotisationPayee}
-                        onChange={(e) => setDto({ ...dto, cotisationPayee: e.target.checked })}
-                    />
-                }
-                label="Cotisation payée"
+            <ChampDatePaiement
+                valeur={dto.cotisationPayeeLe}
+                onChange={(cotisationPayeeLe) => setDto({ ...dto, cotisationPayeeLe })}
             />
-            {props.initial?.cotisationPayee && !dto.cotisationPayee && (
-                <Alert severity="warning">
-                    La cotisation repassera à « non payée » : l'étudiant ne pourra plus s'inscrire aux
-                    sorties et verra une alerte sur son accueil.
-                </Alert>
-            )}
         </FormulaireDialog>
     );
 }
 
-export { FormulaireEvenement, FormulaireSortie, FormulaireEtudiant };
+// Parcours et statut boursier sont figés ; une date de paiement se corrige mais ne s'efface pas.
+function FormulaireEditionEtudiant(props: {
+    initial: etudiantType;
+    enCours: boolean;
+    onFermer: () => void;
+    onValider: (dto: etudiantUpdateDtoType) => void;
+}) {
+    const { initial } = props;
+    const [identite, setIdentite] = useState<identiteType>({
+        nom: initial.nom,
+        prenom: initial.prenom,
+        email: initial.email,
+    });
+    const [jour, setJour] = useState(initial.cotisationPayeeLe);
+
+    return (
+        <FormulaireDialog
+            ouvert
+            titre="Modifier l'étudiant"
+            enCours={props.enCours}
+            onFermer={props.onFermer}
+            onValider={() =>
+                props.onValider({
+                    ...identite,
+                    cotisationPayeeLe: jour && jour !== initial.cotisationPayeeLe ? jour : undefined,
+                })
+            }
+        >
+            <ChampsIdentite dto={identite} onChange={setIdentite} />
+            <ChampDatePaiement valeur={jour} requis={initial.cotisationPayeeLe !== null} onChange={setJour} />
+        </FormulaireDialog>
+    );
+}
+
+export { FormulaireEvenement, FormulaireSortie, FormulaireCreationEtudiant, FormulaireEditionEtudiant };

@@ -32,8 +32,7 @@ function Router() {
   const me = useQuery({
     queryKey: ["me"],
     queryFn: api.getMe,
-    enabled: connecte,
-  });
+    enabled: connecte, /* Blocage des bonus et cotisation évoluent. */ refetchInterval: 60_000 });
 
   if (!connecte) {
     return (

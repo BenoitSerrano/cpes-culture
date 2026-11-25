@@ -35,18 +35,23 @@ import { ChangeEvent, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
+import { Pertes } from '../../components/Pertes';
+import { BadgeBonusBloque } from '../../components/SituationBonus';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
 import { api } from '../../lib/api';
 import { useTri } from '../../lib/tri';
+import { formatJour, getAujourdhui } from '../../lib/format';
 import { useAction } from '../../lib/useAction';
+import { useActionConfirmee } from '../../lib/useActionConfirmee';
 import type {
     apercuImportType,
+    celluleRecapitulatifType,
     etudiantAdminType,
     etudiantDtoType,
     statutRecapitulatifType,
 } from '../../types';
-import { FormulaireEtudiant } from './formulaires';
+import { FormulaireCreationEtudiant } from './formulaires';
 
 type filtreBooleenType = '' | 'oui' | 'non';
 
@@ -80,8 +85,10 @@ function Etudiants() {
         succes: 'Étudiant ajouté.',
         onSuccess: () => setCreation(false),
     });
-    const basculerCotisation = useAction(
-        ({ id, valeur }: { id: string; valeur: boolean }) => api.updateEtudiant(id, { cotisationPayee: valeur }),
+    const [datePaiement, setDatePaiement] = useState(getAujourdhui);
+    const basculerCotisation = useActionConfirmee(
+        ({ id, jour }: { id: string; jour: string }, confirme) =>
+            api.updateEtudiant(id, { cotisationPayeeLe: jour }, confirme),
         { succes: 'Cotisation mise à jour.', onSuccess: () => setCotisationAChanger(undefined) },
     );
 
@@ -93,7 +100,7 @@ function Etudiants() {
             (e) =>
                 (!r || normaliser(`${e.prenom} ${e.nom} ${e.email}`).includes(r)) &&
                 (!parcoursId || e.parcoursId === parcoursId) &&
-                correspond(cotisation, e.cotisationPayee),
+                correspond(cotisation, e.cotisationPayeeLe !== null),
         );
     }, [etudiants.data, recherche, parcoursId, cotisation]);
 
@@ -103,13 +110,13 @@ function Etudiants() {
         prenom: (e) => `${e.prenom} ${e.nom}`,
         parcours: (e) => e.parcoursNom,
         statut: (e) => e.boursier,
-        cotisation: (e) => e.cotisationPayee,
+        cotisation: (e) => e.cotisationPayeeLe,
         // Tri par nombre de problèmes (non-inscriptions + absences injustifiées).
         presences: (e) => e.nbNonInscrit + e.nbAbsentSansJustificatif,
     };
     for (const evenement of colonnesEvenements) {
         colonnesTri[`evenement:${evenement.id}`] = (e) => {
-            const statut = recapitulatif.data?.cellules[e.id]?.[evenement.id];
+            const statut = recapitulatif.data?.cellules[e.id]?.[evenement.id]?.statut;
             return statut ? ORDRE_STATUTS_RECAPITULATIF.indexOf(statut) : null;
         };
     }
@@ -216,6 +223,7 @@ function Etudiants() {
                                             <Typography variant="body2" color="text.secondary">
                                                 {e.email}
                                             </Typography>
+                                            {e.bonusBloque && <BadgeBonusBloque />}
                                         </TableCell>
                                         <TableCell>
                                             <Link to={`/admin/etudiants/${e.id}`}>{e.prenom}</Link>
@@ -229,19 +237,23 @@ function Etudiants() {
                                             {e.boursier ? 'Boursier' : null}
                                         </TableCell>
                                         <TableCell>
-                                            {/* Action à sens unique : le retour à « non payée » se fait
-                                                depuis la fiche de l'étudiant. */}
+                                            {/* Une cotisation payée ne redevient jamais « non payée ». */}
                                             <Stack direction="row" spacing={1} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-                                                <OuiNon valeur={e.cotisationPayee} label="Cotisation payée" />
+                                                <OuiNon valeur={e.cotisationPayeeLe !== null} label="Cotisation payée" />
                                                 <Typography variant="body2">
-                                                    {e.cotisationPayee ? 'Payée' : 'Non payée'}
+                                                    {e.cotisationPayeeLe
+                                                        ? `Payée le ${formatJour(e.cotisationPayeeLe)}`
+                                                        : 'Non payée'}
                                                 </Typography>
-                                                {!e.cotisationPayee && (
+                                                {e.cotisationPayeeLe === null && (
                                                     <Button
                                                         size="small"
                                                         variant="outlined"
                                                         disabled={basculerCotisation.isPending}
-                                                        onClick={() => setCotisationAChanger(e)}
+                                                        onClick={() => {
+                                                            setDatePaiement(getAujourdhui());
+                                                            setCotisationAChanger(e);
+                                                        }}
                                                     >
                                                         Marquer payée
                                                     </Button>
@@ -259,10 +271,10 @@ function Etudiants() {
                                             </TableCell>
                                         )}
                                         {colonnesEvenements.map((evenement) => {
-                                            const statut = recapitulatif.data?.cellules[e.id]?.[evenement.id];
+                                            const cellule = recapitulatif.data?.cellules[e.id]?.[evenement.id];
                                             return (
                                                 <TableCell key={evenement.id}>
-                                                    {statut && <StatutRecapitulatif statut={statut} />}
+                                                    {cellule && <StatutRecapitulatif cellule={cellule} />}
                                                 </TableCell>
                                             );
                                         })}
@@ -275,8 +287,7 @@ function Etudiants() {
             )}
 
             {creation && (
-                <FormulaireEtudiant
-                    titre="Ajouter un étudiant"
+                <FormulaireCreationEtudiant
                     enCours={creer.isPending}
                     onFermer={() => setCreation(false)}
                     onValider={(dto) => creer.mutate(dto)}
@@ -287,16 +298,29 @@ function Etudiants() {
                 ouvert={!!cotisationAChanger}
                 titre="Marquer la cotisation comme payée ?"
                 libelle="Confirmer"
-                enCours={basculerCotisation.isPending}
+                enCours={basculerCotisation.isPending || !datePaiement}
                 onAnnuler={() => setCotisationAChanger(undefined)}
                 onConfirmer={() =>
-                    cotisationAChanger && basculerCotisation.mutate({ id: cotisationAChanger.id, valeur: true })
+                    cotisationAChanger &&
+                    datePaiement &&
+                    basculerCotisation.mutate({ id: cotisationAChanger.id, jour: datePaiement })
                 }
             >
-                <Typography>
-                    {cotisationAChanger?.prenom} {cotisationAChanger?.nom} pourra s’inscrire aux sorties.
-                </Typography>
+                <Stack spacing={2}>
+                    <Typography>
+                        {cotisationAChanger?.prenom} {cotisationAChanger?.nom} pourra s’inscrire aux sorties.
+                    </Typography>
+                    <TextField
+                        label="Date de paiement"
+                        type="date"
+                        required
+                        value={datePaiement}
+                        onChange={(event) => setDatePaiement(event.target.value)}
+                        slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: getAujourdhui() } }}
+                    />
+                </Stack>
             </Confirmation>
+            {basculerCotisation.dialogue}
         </Stack>
     );
 }
@@ -329,28 +353,39 @@ const COULEURS_RECAPITULATIF = {
     ni: { bg: '#DC2626', fg: '#fff' },
     abj: { bg: '#FACC15', fg: '#111' },
     abi: { bg: '#DC2626', fg: '#fff' },
+    exempte: { bg: '#9CA3AF', fg: '#111' },
 };
 
 // Ordre de tri : du plus problématique au plus satisfaisant.
-const ORDRE_STATUTS_RECAPITULATIF: statutRecapitulatifType[] = ['non_inscrit', 'abi', 'non_pointe', 'abj', 'ok'];
+const ORDRE_STATUTS_RECAPITULATIF: statutRecapitulatifType[] = [
+    'ni',
+    'abi',
+    'pas_inscrit',
+    'non_pointe',
+    'ni_exempte',
+    'abj',
+    'ok',
+];
 
 const STATUTS_RECAPITULATIF: Record<
     statutRecapitulatifType,
     { label: string; titre: string; couleur?: { bg: string; fg: string } }
 > = {
-    non_inscrit: { label: 'NI', titre: 'Non inscrit : inscrit à aucune sortie', couleur: COULEURS_RECAPITULATIF.ni },
+    ni: { label: 'NI', titre: 'Non inscrit, inscriptions closes', couleur: COULEURS_RECAPITULATIF.ni },
+    ni_exempte: { label: 'NI', titre: 'Non inscrit, sans faute', couleur: COULEURS_RECAPITULATIF.exempte },
+    pas_inscrit: { label: 'Pas inscrit', titre: 'Les inscriptions sont encore ouvertes' },
     non_pointe: { label: 'Non-pointé', titre: 'Inscrit, présence pas encore pointée' },
     abj: { label: 'ABJ', titre: 'Absent avec justificatif', couleur: { bg: '#FACC15', fg: '#111' } },
     abi: { label: 'ABI', titre: 'Absent sans justificatif', couleur: { bg: '#DC2626', fg: '#fff' } },
     ok: { label: 'OK', titre: 'Présent', couleur: { bg: '#16A34A', fg: '#fff' } },
 };
 
-function StatutRecapitulatif({ statut }: { statut: statutRecapitulatifType }) {
-    const { label, titre, couleur } = STATUTS_RECAPITULATIF[statut];
+function StatutRecapitulatif({ cellule }: { cellule: celluleRecapitulatifType }) {
+    const { label, titre, couleur } = STATUTS_RECAPITULATIF[cellule.statut];
     return (
         <Chip
             label={label}
-            title={titre}
+            title={cellule.detail ? `Pas une faute : ${cellule.detail}` : titre}
             variant={couleur ? 'filled' : 'outlined'}
             sx={couleur ? { bgcolor: couleur.bg, color: couleur.fg, fontWeight: 600 } : undefined}
         />
@@ -425,7 +460,7 @@ function ImportCsv({ onFermer }: { onFermer: () => void }) {
         etudiant: (l) => `${l.nom} ${l.prenom}`,
         parcours: (l) => l.parcoursNom,
         boursier: (l) => l.boursier,
-        cotisation: (l) => l.cotisationPayee,
+        cotisation: (l) => l.cotisationPayeeLe,
     });
 
     const choisirFichier = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -444,9 +479,10 @@ function ImportCsv({ onFermer }: { onFermer: () => void }) {
             <DialogContent>
                 <Stack spacing={2}>
                     <Typography variant="body2" color="text.secondary">
-                        Colonnes attendues : <code>nom, prenom, email, parcours, boursier, cotisation_payee</code>{' '}
-                        (séparateur « ; » ou « , »). Le parcours est désigné par son nom ; boursier et
-                        cotisation_payee valent oui ou non. Un e-mail déjà connu met l'étudiant à jour.
+                        Colonnes attendues : <code>nom, prenom, email, parcours, boursier, cotisation_payee_le</code>{' '}
+                        (séparateur « ; » ou « , »). Le parcours est désigné par son nom, boursier vaut oui ou
+                        non, et cotisation_payee_le est une date (JJ/MM/AAAA) ou reste vide. Pour un e-mail
+                        déjà connu, seuls le nom, le prénom et une date de paiement manquante sont mis à jour.
                     </Typography>
                     <Box>
                         <Button variant="outlined" component="label">
@@ -480,6 +516,9 @@ function ImportCsv({ onFermer }: { onFermer: () => void }) {
                                     </Box>
                                 </Alert>
                             )}
+                            {apercu.erreurs.length === 0 && apercu.pertes.length > 0 && (
+                                <Pertes pertes={apercu.pertes} />
+                            )}
                             {apercu.erreurs.length === 0 && (
                                 <TableContainer component={Paper} sx={{ maxHeight: 320 }}>
                                     <Table size="small" stickyHeader>
@@ -504,7 +543,11 @@ function ImportCsv({ onFermer }: { onFermer: () => void }) {
                                                     </TableCell>
                                                     <TableCell>{l.parcoursNom}</TableCell>
                                                     <TableCell>{l.boursier ? 'Oui' : 'Non'}</TableCell>
-                                                    <TableCell>{l.cotisationPayee ? 'Payée' : 'Non payée'}</TableCell>
+                                                    <TableCell>
+                                                        {l.cotisationPayeeLe
+                                                            ? `Payée le ${formatJour(l.cotisationPayeeLe)}`
+                                                            : 'Non payée'}
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>

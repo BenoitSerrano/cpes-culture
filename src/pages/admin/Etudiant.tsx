@@ -6,14 +6,16 @@ import { BadgeBonus, BadgeParcours } from '../../components/BadgeParcours';
 import { Chargement } from '../../components/Chargement';
 import { Confirmation } from '../../components/Confirmation';
 import { Erreur } from '../../components/Erreur';
+import { Annulations, BadgeBonusBloque, DetailFautes } from '../../components/SituationBonus';
 import { StatutChip } from '../../components/StatutChip';
 import { api } from '../../lib/api';
 import { tokenStorage } from '../../lib/storage';
-import { formatDateHeure } from '../../lib/format';
+import { formatDateHeure, formatJour } from '../../lib/format';
 import { useAction } from '../../lib/useAction';
-import type { etudiantDtoType } from '../../types';
+import { useActionConfirmee } from '../../lib/useActionConfirmee';
+import type { etudiantUpdateDtoType } from '../../types';
 import { Compteurs } from './Etudiants';
-import { FormulaireEtudiant } from './formulaires';
+import { FormulaireEditionEtudiant } from './formulaires';
 
 function Etudiant() {
     const { etudiantId = '' } = useParams();
@@ -25,10 +27,10 @@ function Etudiant() {
     const [edition, setEdition] = useState(false);
     const [suppression, setSuppression] = useState(false);
 
-    const modifier = useAction((dto: etudiantDtoType) => api.updateEtudiant(etudiantId, dto), {
-        succes: 'Étudiant modifié.',
-        onSuccess: () => setEdition(false),
-    });
+    const modifier = useActionConfirmee(
+        (dto: etudiantUpdateDtoType, confirme) => api.updateEtudiant(etudiantId, dto, confirme),
+        { succes: 'Étudiant modifié.', onSuccess: () => setEdition(false) },
+    );
     const voirCommeEtudiant = useAction(() => api.impersonifier(etudiantId), {
         onSuccess: ({ token }) => {
             tokenStorage.demarrerImpersonation(token, etudiantId);
@@ -59,10 +61,15 @@ function Etudiant() {
                 <Stack direction="row" spacing={1} sx={{ mt: 1 }} flexWrap="wrap" useFlexGap>
                     <BadgeParcours nom={e.parcoursNom} couleur={e.parcoursCouleur} prefixe />
                     <Chip
-                        label={e.cotisationPayee ? 'Cotisation payée' : 'Cotisation non payée'}
-                        color={e.cotisationPayee ? 'success' : 'warning'}
+                        label={
+                            e.cotisationPayeeLe
+                                ? `Cotisation payée le ${formatJour(e.cotisationPayeeLe)}`
+                                : 'Cotisation non payée'
+                        }
+                        color={e.cotisationPayeeLe ? 'success' : 'warning'}
                     />
                     {e.boursier && <Chip label="Boursier" variant="outlined" />}
+                    {e.bonusBloque && <BadgeBonusBloque />}
                 </Stack>
             </Box>
 
@@ -81,6 +88,9 @@ function Etudiant() {
                     Supprimer
                 </Button>
             </Stack>
+
+            <DetailFautes situation={e.situation} />
+            <Annulations annulations={e.annulations} />
 
             <Box>
                 <Typography variant="h2" gutterBottom>
@@ -118,21 +128,14 @@ function Etudiant() {
             )}
 
             {edition && (
-                <FormulaireEtudiant
-                    titre="Modifier l'étudiant"
-                    initial={{
-                        nom: e.nom,
-                        prenom: e.prenom,
-                        email: e.email,
-                        parcoursId: e.parcoursId,
-                        boursier: e.boursier,
-                        cotisationPayee: e.cotisationPayee,
-                    }}
+                <FormulaireEditionEtudiant
+                    initial={e}
                     enCours={modifier.isPending}
                     onFermer={() => setEdition(false)}
                     onValider={(dto) => modifier.mutate(dto)}
                 />
             )}
+            {modifier.dialogue}
             <Confirmation
                 ouvert={suppression}
                 titre="Supprimer cet étudiant ?"

@@ -1,10 +1,12 @@
 import { ApiError } from "./errors";
 import { tokenStorage } from "./storage";
 import type {
+  annulationType,
   attenteEtudiantType,
   apercuImportType,
   etudiantAdminType,
   etudiantDtoType,
+  etudiantUpdateDtoType,
   etudiantType,
   evenementAdminType,
   evenementDetailType,
@@ -73,6 +75,14 @@ type evenementDtoType = {
 };
 type sortieDtoType = { debut: string; places: number };
 
+// Conséquences d'une action du prof : étudiants promus depuis la liste d'attente, et bonus retirés
+// à des étudiants bloqués.
+type effetsType = { promus: string[]; nbAnnulations: number };
+
+// Le prof a accepté les pertes de bonus que son action entraîne (sinon l'API répond 409 avec la
+// liste : cf. useActionConfirmee).
+const q = (confirme: boolean) => (confirme ? "?confirme=1" : "");
+
 const api = {
   // Authentification
   demanderCode: (email: string) =>
@@ -91,6 +101,7 @@ const api = {
       aVenir: inscriptionEtudiantType[];
       historique: inscriptionEtudiantType[];
       listeAttente: attenteEtudiantType[];
+      annulations: annulationType[];
     }>("moi/inscriptions"),
   sInscrire: (sortieId: string) =>
     call<{ ok: true }>(`moi/sorties/${sortieId}/inscription`, "POST"),
@@ -114,8 +125,8 @@ const api = {
   getEtudiant: (id: string) => call<ficheEtudiantType>(`admin/etudiants/${id}`),
   createEtudiant: (dto: etudiantDtoType) =>
     call<etudiantType>("admin/etudiants", "POST", dto),
-  updateEtudiant: (id: string, dto: Partial<etudiantDtoType>) =>
-    call<etudiantType>(`admin/etudiants/${id}`, "PATCH", dto),
+  updateEtudiant: (id: string, dto: etudiantUpdateDtoType, confirme = false) =>
+    call<etudiantType>(`admin/etudiants/${id}${q(confirme)}`, "PATCH", dto),
   deleteEtudiant: (id: string) => call(`admin/etudiants/${id}`, "DELETE"),
   impersonifier: (id: string) =>
     call<{ token: string }>(`admin/etudiants/${id}/impersonation`, "POST"),
@@ -148,20 +159,32 @@ const api = {
     ),
 
   // Admin : sorties
-  createSortie: (evenementId: string, dto: sortieDtoType) =>
-    call<sortieType>(`admin/evenements/${evenementId}/sorties`, "POST", dto),
+  createSortie: (evenementId: string, dto: sortieDtoType, confirme = false) =>
+    call<sortieType & effetsType>(
+      `admin/evenements/${evenementId}/sorties${q(confirme)}`,
+      "POST",
+      dto,
+    ),
   getSortie: (id: string) => call<sortieDetailType>(`admin/sorties/${id}`),
   // promus : étudiants inscrits automatiquement depuis la liste d'attente.
-  updateSortie: (id: string, dto: Partial<sortieDtoType>) =>
-    call<sortieType & { promus: string[] }>(`admin/sorties/${id}`, "PATCH", dto),
-  deleteSortie: (id: string) => call(`admin/sorties/${id}`, "DELETE"),
+  updateSortie: (id: string, dto: Partial<sortieDtoType>, confirme = false) =>
+    call<sortieType & effetsType>(
+      `admin/sorties/${id}${q(confirme)}`,
+      "PATCH",
+      dto,
+    ),
+  deleteSortie: (id: string, confirme = false) =>
+    call<{ nbAnnulations: number }>(
+      `admin/sorties/${id}${q(confirme)}`,
+      "DELETE",
+    ),
   exporterSortie: (id: string) =>
     call<{ filename: string; csv: string }>(`admin/sorties/${id}/export`),
   inscrire: (sortieId: string, etudiantId: string) =>
     call(`admin/sorties/${sortieId}/inscriptions/${etudiantId}`, "POST"),
-  desinscrire: (sortieId: string, etudiantId: string) =>
-    call<{ ok: true; promus: string[] }>(
-      `admin/sorties/${sortieId}/inscriptions/${etudiantId}`,
+  desinscrire: (sortieId: string, etudiantId: string, confirme = false) =>
+    call<effetsType>(
+      `admin/sorties/${sortieId}/inscriptions/${etudiantId}${q(confirme)}`,
       "DELETE",
     ),
   retirerDeListeAttente: (sortieId: string, etudiantId: string) =>
@@ -170,10 +193,13 @@ const api = {
     sortieId: string,
     etudiantId: string,
     statut: statutPresenceType | null,
+    confirme = false,
   ) =>
-    call(`admin/sorties/${sortieId}/inscriptions/${etudiantId}`, "PATCH", {
-      statut,
-    }),
+    call<{ nbAnnulations: number }>(
+      `admin/sorties/${sortieId}/inscriptions/${etudiantId}${q(confirme)}`,
+      "PATCH",
+      { statut },
+    ),
   getSortiesAPointer: () =>
     call<sortieAPointerType[]>("admin/sorties-a-pointer"),
 };

@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Confirmation } from '../../components/Confirmation';
 import { Chargement } from '../../components/Chargement';
 import { Erreur } from '../../components/Erreur';
+import { Annulations } from '../../components/SituationBonus';
 import { StatutChip } from '../../components/StatutChip';
 import { Infos, Lieu } from '../../components/Lieu';
 import { RendezVous } from '../../components/RendezVous';
@@ -32,6 +33,7 @@ function MesInscriptions() {
             {inscriptions.data.listeAttente.length > 0 && (
                 <ListeAttente lignes={inscriptions.data.listeAttente} />
             )}
+            <Annulations annulations={inscriptions.data.annulations} />
             <Section
                 titre="Historique"
                 vide="Aucune sortie passée."

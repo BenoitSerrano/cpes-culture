@@ -32,6 +32,7 @@ import { formatDateCourte, formatDateHeure } from "../../lib/format";
 import { ETATS } from "../../lib/labels";
 import { useTri } from "../../lib/tri";
 import { useAction } from "../../lib/useAction";
+import { useActionConfirmee } from "../../lib/useActionConfirmee";
 import type { evenementDetailType } from "../../types";
 import { FormulaireEvenement, FormulaireSortie } from "./formulaires";
 
@@ -74,24 +75,32 @@ function Evenement() {
           ),
     { succes: "Évènement ouvert.", onSuccess: () => setOuverture(undefined) },
   );
-  const enregistrerSortie = useAction(
-    ({ id, dto }: { id?: string; dto: sortieDtoType }) =>
-      id ? api.updateSortie(id, dto) : api.createSortie(evenementId, dto),
+  const enregistrerSortie = useActionConfirmee(
+    ({ id, dto }: { id?: string; dto: sortieDtoType }, confirme) =>
+      id
+        ? api.updateSortie(id, dto, confirme)
+        : api.createSortie(evenementId, dto, confirme),
     {
-      succes: (resultat) => {
-        const promus: string[] =
-          "promus" in resultat ? (resultat.promus as string[]) : [];
-        return promus.length === 0
-          ? "Sortie enregistrée."
-          : `Sortie enregistrée. ${promus.join(", ")} ${promus.length > 1 ? "sont inscrits" : "est inscrit"} depuis la liste d'attente.`;
-      },
+      succes: ({ promus, nbAnnulations }) =>
+        [
+          "Sortie enregistrée.",
+          promus.length > 0 &&
+            `${promus.join(", ")} ${promus.length > 1 ? "sont inscrits" : "est inscrit"} depuis la liste d'attente.`,
+          nbAnnulations > 0 &&
+            `${nbAnnulations} place(s) bonus retirée(s) à des étudiants bloqués.`,
+        ]
+          .filter(Boolean)
+          .join(" "),
       onSuccess: () => setSortieEditee(undefined),
     },
   );
-  const supprimerSortie = useAction((id: string) => api.deleteSortie(id), {
-    succes: "Sortie supprimée.",
-    onSuccess: () => setSortieSupprimee(undefined),
-  });
+  const supprimerSortie = useActionConfirmee(
+    (id: string, confirme) => api.deleteSortie(id, confirme),
+    {
+      succes: "Sortie supprimée.",
+      onSuccess: () => setSortieSupprimee(undefined),
+    },
+  );
 
   const triSorties = useTri(
     evenement.data?.sorties ?? [],
@@ -437,6 +446,8 @@ function Evenement() {
           {sortieSupprimee && formatDateHeure(sortieSupprimee.debut)}
         </Typography>
       </Confirmation>
+      {enregistrerSortie.dialogue}
+      {supprimerSortie.dialogue}
     </Stack>
   );
 }

@@ -46,4 +46,13 @@ function saisieVersIso(saisie: string) {
     return new Date(approx.getTime() - decalage).toISOString();
 }
 
-export { formatDateHeure, formatDateCourte, isoVersSaisie, saisieVersIso };
+// Jour sans heure (AAAA-MM-JJ) → JJ/MM/AAAA.
+function formatJour(jour: string) {
+    return jour.split('-').reverse().join('/');
+}
+
+function getAujourdhui() {
+    return isoVersSaisie(new Date().toISOString()).slice(0, 10);
+}
+
+export { formatJour, getAujourdhui, formatDateHeure, formatDateCourte, isoVersSaisie, saisieVersIso };

@@ -37,6 +37,7 @@ import { STATUTS, telechargerCsv } from '../../lib/labels';
 import { useNotify } from '../../lib/notify';
 import { useTri } from '../../lib/tri';
 import { useAction } from '../../lib/useAction';
+import { useActionConfirmee } from '../../lib/useActionConfirmee';
 import type { sortieDetailType, statutPresenceType } from '../../types';
 
 type inscritType = sortieDetailType['inscrits'][number];
@@ -48,6 +49,10 @@ const messagePromus = (promus: string[]) =>
         ? ''
         : ` ${promus.join(', ')} ${promus.length > 1 ? 'sont inscrits' : 'est inscrit'} depuis la liste d'attente.`;
 
+// Message ajouté quand des étudiants bloqués ont perdu des bonus.
+const messageAnnulations = (n: number) =>
+    n === 0 ? '' : ` ${n} place(s) bonus retirée(s) à des étudiants bloqués.`;
+
 function Sortie() {
     const { sortieId = '' } = useParams();
     const notify = useNotify();
@@ -55,19 +60,27 @@ function Sortie() {
     const [candidat, setCandidat] = useState<candidatType | null>(null);
     const [aDesinscrire, setADesinscrire] = useState<inscritType>();
 
-    const pointer = useAction(
-        ({ etudiantId, statut }: { etudiantId: string; statut: statutPresenceType | null }) =>
-            api.pointer(sortieId, etudiantId, statut),
+    const pointer = useActionConfirmee(
+        ({ etudiantId, statut }: { etudiantId: string; statut: statutPresenceType | null }, confirme) =>
+            api.pointer(sortieId, etudiantId, statut, confirme),
+        {
+            succes: ({ nbAnnulations }) =>
+                nbAnnulations > 0 ? `Pointage enregistré.${messageAnnulations(nbAnnulations)}` : undefined,
+        },
     );
     const [listeOuverte, setListeOuverte] = useState(false);
     const inscrire = useAction((etudiantId: string) => api.inscrire(sortieId, etudiantId), {
         succes: 'Étudiant inscrit.',
         onSuccess: () => setCandidat(null),
     });
-    const desinscrire = useAction((etudiantId: string) => api.desinscrire(sortieId, etudiantId), {
-        succes: ({ promus }) => `Étudiant désinscrit.${messagePromus(promus)}`,
-        onSuccess: () => setADesinscrire(undefined),
-    });
+    const desinscrire = useActionConfirmee(
+        (etudiantId: string, confirme) => api.desinscrire(sortieId, etudiantId, confirme),
+        {
+            succes: ({ promus, nbAnnulations }) =>
+                `Étudiant désinscrit.${messagePromus(promus)}${messageAnnulations(nbAnnulations)}`,
+            onSuccess: () => setADesinscrire(undefined),
+        },
+    );
     const [aRetirer, setARetirer] = useState<sortieDetailType['listeAttente'][number]>();
     const retirer = useAction((etudiantId: string) => api.retirerDeListeAttente(sortieId, etudiantId), {
         succes: "Étudiant retiré de la liste d'attente.",
@@ -370,6 +383,8 @@ function Sortie() {
                     {aDesinscrire?.prenom} {aDesinscrire?.nom} sera retiré de cette sortie et sa place libérée.
                 </Typography>
             </Confirmation>
+            {pointer.dialogue}
+            {desinscrire.dialogue}
         </Stack>
     );
 }

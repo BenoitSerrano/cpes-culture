@@ -5,7 +5,12 @@ import { useNotify } from './notify';
 // Mutation qui rafraîchit toutes les données et affiche le résultat.
 function useAction<argsT, resultT>(
     action: (args: argsT) => Promise<resultT>,
-    options: { succes?: string | ((result: resultT) => string); onSuccess?: (result: resultT) => void } = {},
+    options: {
+        succes?: string | ((result: resultT) => string | undefined);
+        onSuccess?: (result: resultT) => void;
+        // Renvoie true si l'erreur est prise en charge (elle n'est alors pas affichée).
+        onError?: (error: unknown, args: argsT) => boolean;
+    } = {},
 ) {
     const queryClient = useQueryClient();
     const notify = useNotify();
@@ -15,11 +20,14 @@ function useAction<argsT, resultT>(
         onSuccess: (result) => {
             options.onSuccess?.(result);
             if (options.succes) {
-                notify(typeof options.succes === 'function' ? options.succes(result) : options.succes);
+                const message = typeof options.succes === 'function' ? options.succes(result) : options.succes;
+                if (message) notify(message);
             }
             return queryClient.invalidateQueries();
         },
-        onError: (error) => notify(getErrorMessage(error), 'error'),
+        onError: (error, args) => {
+            if (!options.onError?.(error, args)) notify(getErrorMessage(error), 'error');
+        },
     });
 }
 
